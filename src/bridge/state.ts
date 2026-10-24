@@ -21,6 +21,7 @@ export type StudioCommandType =
   | "rename_instance"
   | "search_instances"
   | "inspect_instance"
+  | "import_ui"
   | "import_blender"
   | "execute_lua";
 

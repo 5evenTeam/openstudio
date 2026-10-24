@@ -763,6 +763,98 @@ export function registerTools(server: McpServer, state: BridgeState): void {
     },
   );
 
+
+  server.tool(
+    "openstudio_studio_ui",
+    "Build Roblox UI in Studio from a node tree (StudioUI). The node may contain className/name, properties (array of {name,type,value}), props (simple object), and children.",
+    {
+      parentPath: z.string().optional(),
+      node: z.any(),
+    },
+    async ({ parentPath, node }) => {
+      if (!state.hasPermission("full-edit")) {
+        return permissionError("full-edit");
+      }
+      if (!node || typeof node !== "object") {
+        return okText({ ok: false, error: "A node object is required." });
+      }
+      const result = await sendStudioCommand(state, state.isStudioConnected.bind(state), HEARTBEAT_STALE_MS, "import_ui", {
+        parentPath: parentPath ?? "game.StarterGui",
+        node,
+      });
+      return okText(result);
+    },
+  );
+
+
+  server.tool(
+    "openstudio_create_ui",
+    "Build Roblox UI in Studio from a node tree (StudioUI). The node may contain className/name, properties (array of {name,type,value}), props (simple object), and children.",
+    {
+      parentPath: z.string().optional(),
+      node: z.any(),
+    },
+    async ({ parentPath, node }) => {
+      if (!state.hasPermission("full-edit")) {
+        return permissionError("full-edit");
+      }
+      if (!node || typeof node !== "object") {
+        return okText({ ok: false, error: "A node object is required." });
+      }
+      const result = await sendStudioCommand(state, state.isStudioConnected.bind(state), HEARTBEAT_STALE_MS, "import_ui", {
+        parentPath: parentPath ?? "game.StarterGui",
+        node,
+      });
+      return okText(result);
+    },
+  );
+
+
+  server.tool(
+    "openstudio_import_ui",
+    "Build Roblox UI in Studio from a node tree (StudioUI). The node may contain className/name, properties (array of {name,type,value}), props (simple object), and children.",
+    {
+      parentPath: z.string().optional(),
+      node: z.any(),
+    },
+    async ({ parentPath, node }) => {
+      if (!state.hasPermission("full-edit")) {
+        return permissionError("full-edit");
+      }
+      if (!node || typeof node !== "object") {
+        return okText({ ok: false, error: "A node object is required." });
+      }
+      const result = await sendStudioCommand(state, state.isStudioConnected.bind(state), HEARTBEAT_STALE_MS, "import_ui", {
+        parentPath: parentPath ?? "game.StarterGui",
+        node,
+      });
+      return okText(result);
+    },
+  );
+
+
+  server.tool(
+    "openstudio_build_ui",
+    "Build Roblox UI in Studio from a node tree (StudioUI). The node may contain className/name, properties (array of {name,type,value}), props (simple object), and children.",
+    {
+      parentPath: z.string().optional(),
+      node: z.any(),
+    },
+    async ({ parentPath, node }) => {
+      if (!state.hasPermission("full-edit")) {
+        return permissionError("full-edit");
+      }
+      if (!node || typeof node !== "object") {
+        return okText({ ok: false, error: "A node object is required." });
+      }
+      const result = await sendStudioCommand(state, state.isStudioConnected.bind(state), HEARTBEAT_STALE_MS, "import_ui", {
+        parentPath: parentPath ?? "game.StarterGui",
+        node,
+      });
+      return okText(result);
+    },
+  );
+
   // Keep the previous version tool in sync with config.
   // (No-op here; openstudio_version already returns bridge metadata.)
 }
