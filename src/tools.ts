@@ -939,6 +939,44 @@ export function registerTools(server: McpServer, state: BridgeState): void {
     },
   );
 
+
+  server.tool(
+    "openstudio_test",
+    "Run a read-only structural test of the game: compiles scripts and reports UI/code issues.",
+    {
+      root: z.string().optional(),
+      maxNodes: z.number().int().min(1).max(10000).optional(),
+      maxScripts: z.number().int().min(1).max(1000).optional(),
+    },
+    async ({ root, maxNodes, maxScripts }) => {
+      const result = await sendStudioCommand(state, state.isStudioConnected.bind(state), HEARTBEAT_STALE_MS, "test_game", {
+        root: root ?? "game",
+        maxNodes: maxNodes ?? 3000,
+        maxScripts: maxScripts ?? 200,
+      });
+      return okText(result);
+    },
+  );
+
+
+  server.tool(
+    "openstudio_test_game",
+    "Run a read-only structural test of the game: compiles scripts and reports UI/code issues.",
+    {
+      root: z.string().optional(),
+      maxNodes: z.number().int().min(1).max(10000).optional(),
+      maxScripts: z.number().int().min(1).max(1000).optional(),
+    },
+    async ({ root, maxNodes, maxScripts }) => {
+      const result = await sendStudioCommand(state, state.isStudioConnected.bind(state), HEARTBEAT_STALE_MS, "test_game", {
+        root: root ?? "game",
+        maxNodes: maxNodes ?? 3000,
+        maxScripts: maxScripts ?? 200,
+      });
+      return okText(result);
+    },
+  );
+
 // Keep the previous version tool in sync with config.
   // (No-op here; openstudio_version already returns bridge metadata.)
 }

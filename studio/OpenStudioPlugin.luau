@@ -63,6 +63,7 @@ local function heartbeat()
             "import_blender",
             "execute_lua",
             "rename_instance",
+            "test_game",
             "search_instances",
             "inspect_instance",
         },
@@ -424,6 +425,60 @@ local function executeCommand(command)
             return false, buildErr or "Unable to build UI node"
         end
         return true, { root = getPathString(rootInstance), created = createdCount }
+    elseif command.type == "test_game" then
+        local root, err = resolvePath(command.payload.root)
+        if not root then
+            return false, err
+        end
+        local maxNodes = tonumber(command.payload.maxNodes) or 3000
+        local maxScripts = tonumber(command.payload.maxScripts) or 200
+        local visited = 0
+        local instanceCount = 0
+        local scriptCount = 0
+        local compileErrors = {}
+        local uiIssues = {}
+        local classCounts = {}
+        local function walk(instance)
+            if visited >= maxNodes then
+                return
+            end
+            visited = visited + 1
+            instanceCount = instanceCount + 1
+            classCounts[instance.ClassName] = (classCounts[instance.ClassName] or 0) + 1
+            if instance:IsA("GuiObject") then
+                local size = instance.Size
+                if (size.X.Scale == 0 and size.X.Offset == 0 and size.Y.Scale == 0 and size.Y.Offset == 0) then
+                    table.insert(uiIssues, { path = getPathString(instance), issue = "zero-size GuiObject" })
+                end
+            end
+            if instance:IsA("TextLabel") or instance:IsA("TextButton") or instance:IsA("TextBox") then
+                if instance.Text == "" then
+                    table.insert(uiIssues, { path = getPathString(instance), issue = "empty Text" })
+                end
+            end
+            if instance:IsA("LuaSourceContainer") and scriptCount < maxScripts then
+                scriptCount = scriptCount + 1
+                local fn, compileError = loadstring(instance.Source)
+                if not fn then
+                    table.insert(compileErrors, { path = getPathString(instance), error = tostring(compileError) })
+                end
+            end
+            for _, child in ipairs(instance:GetChildren()) do
+                walk(child)
+            end
+        end
+        walk(root)
+        return true, {
+            root = getPathString(root),
+            instanceCount = instanceCount,
+            visited = visited,
+            scriptCount = scriptCount,
+            compileErrorCount = #compileErrors,
+            compileErrors = compileErrors,
+            uiIssueCount = #uiIssues,
+            uiIssues = uiIssues,
+            classCounts = classCounts,
+        }
     elseif command.type == "import_blender" then
         local parent, err = resolvePath(command.payload.parentPath)
         if not parent then
