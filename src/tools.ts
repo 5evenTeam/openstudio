@@ -3,7 +3,7 @@ import * as nodePath from "node:path";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { BridgeState } from "./bridge/state.js";
-import { BRIDGE_VERSION, HEARTBEAT_STALE_MS, STUDIO_TIMEOUT_MS, UPDATE_MANIFEST_URL, runtimeDir } from "./config.js";
+import { BRIDGE_VERSION, HEARTBEAT_STALE_MS, UPDATE_MANIFEST_URL, runtimeDir } from "./config.js";
 import { sendStudioCommand } from "./bridge/dispatch.js";
 
 export function registerTools(server: McpServer, state: BridgeState): void {
@@ -304,13 +304,6 @@ export function registerTools(server: McpServer, state: BridgeState): void {
         value: property.value,
       });
     }
-    return instancePath;
-  }
-
-  async function runOnPath(path: string | undefined, callback: (instancePath: string) => Promise<void>) {
-    const instancePath = path;
-    if (!instancePath) throw new Error("missing instance path");
-    await callback(instancePath);
     return instancePath;
   }
 
@@ -1150,6 +1143,278 @@ export function registerTools(server: McpServer, state: BridgeState): void {
         node,
       });
       return okText(result);
+    },
+  );
+
+
+  server.tool(
+    "openstudio_ui_card",
+    "Create a polished card/panel with title and body.",
+    { parentPath: z.string().optional(), name: z.string().optional(), title: z.string().optional(), body: z.string().optional(), width: z.number().int().min(1).max(4096).optional(), height: z.number().int().min(1).max(4096).optional(), background: z.string().optional() },
+    async (params: any) => {
+      if (!state.hasPermission("full-edit")) return permissionError("full-edit");
+      const node = ((p: any) => ({
+  name: p.name ?? "Card",
+  className: "Frame",
+  properties: [
+    { name: "Size", type: "UDim2", value: "0," + (p.width ?? 360) + ",0," + (p.height ?? 160) },
+    { name: "Position", type: "UDim2", value: "0.5,0,0.5,0" },
+    { name: "AnchorPoint", type: "Vector2", value: "0.5,0.5" },
+    { name: "BackgroundColor3", type: "Color3", value: uiColorTuple(p.background, "0.16,0.16,0.18") },
+    { name: "BorderSizePixel", type: "number", value: "0" },
+  ],
+  children: [
+    { name: "UICorner", className: "UICorner", properties: [{ name: "CornerRadius", type: "UDim", value: "0,14" }] },
+    { name: "UIStroke", className: "UIStroke", properties: [{ name: "Color", type: "Color3", value: "0.35,0.35,0.38" }, { name: "Thickness", type: "number", value: "1" }] },
+    ...(p.title ? [{ name: "Title", className: "TextLabel", properties: [
+      { name: "Size", type: "UDim2", value: "1,-24,0,30" },
+      { name: "Position", type: "UDim2", value: "0,12,0,10" },
+      { name: "BackgroundTransparency", type: "number", value: "1" },
+      { name: "Text", type: "string", value: p.title },
+      { name: "TextColor3", type: "Color3", value: "1,1,1" },
+      { name: "TextScaled", type: "boolean", value: "true" },
+      { name: "TextXAlignment", type: "EnumItem", value: "Enum.TextXAlignment.Left" },
+    ] }] : []),
+    ...(p.body ? [{ name: "Body", className: "TextLabel", properties: [
+      { name: "Size", type: "UDim2", value: "1,-24,1,-46" },
+      { name: "Position", type: "UDim2", value: "0,12,0,42" },
+      { name: "BackgroundTransparency", type: "number", value: "1" },
+      { name: "Text", type: "string", value: p.body },
+      { name: "TextColor3", type: "Color3", value: "0.82,0.82,0.86" },
+      { name: "TextWrapped", type: "boolean", value: "true" },
+      { name: "TextScaled", type: "boolean", value: "false" },
+      { name: "TextXAlignment", type: "EnumItem", value: "Enum.TextXAlignment.Left" },
+      { name: "TextYAlignment", type: "EnumItem", value: "Enum.TextYAlignment.Top" },
+    ] }] : []),
+  ],
+}))(params);
+      const result = await sendStudioCommand(state, state.isStudioConnected.bind(state), HEARTBEAT_STALE_MS, "import_ui", {
+        parentPath: params.parentPath ?? "game.StarterGui",
+        node,
+      });
+      return okText(result);
+    },
+  );
+
+
+  server.tool(
+    "openstudio_ui_button",
+    "Create a glossy UI button with corner radius.",
+    { parentPath: z.string().optional(), name: z.string().optional(), text: z.string().optional(), width: z.number().int().min(1).max(4096).optional(), height: z.number().int().min(1).max(4096).optional(), background: z.string().optional() },
+    async (params: any) => {
+      if (!state.hasPermission("full-edit")) return permissionError("full-edit");
+      const node = ((p: any) => ({
+  name: p.name ?? "Button",
+  className: "TextButton",
+  properties: [
+    { name: "Size", type: "UDim2", value: "0," + (p.width ?? 180) + ",0," + (p.height ?? 46) },
+    { name: "BackgroundColor3", type: "Color3", value: uiColorTuple(p.background, "0.24,0.5,0.98") },
+    { name: "Text", type: "string", value: p.text ?? "Button" },
+    { name: "TextColor3", type: "Color3", value: "1,1,1" },
+    { name: "TextScaled", type: "boolean", value: "true" },
+    { name: "BorderSizePixel", type: "number", value: "0" },
+    { name: "AutoButtonColor", type: "boolean", value: "true" },
+    { name: "Font", type: "EnumItem", value: "Enum.Font.GothamBold" },
+  ],
+  children: [
+    { name: "UICorner", className: "UICorner", properties: [{ name: "CornerRadius", type: "UDim", value: "0,10" }] },
+    { name: "UIStroke", className: "UIStroke", properties: [{ name: "Color", type: "Color3", value: "1,1,1" }, { name: "Thickness", type: "number", value: "0" }, { name: "Transparency", type: "number", value: "0.7" }] },
+    { name: "UIScale", className: "UIScale", properties: [{ name: "Scale", type: "number", value: "1" }] },
+  ],
+}))(params);
+      const result = await sendStudioCommand(state, state.isStudioConnected.bind(state), HEARTBEAT_STALE_MS, "import_ui", {
+        parentPath: params.parentPath ?? "game.StarterGui",
+        node,
+      });
+      return okText(result);
+    },
+  );
+
+
+  server.tool(
+    "openstudio_ui_toggle",
+    "Create a polished toggle (visual only; wire events separately).",
+    { parentPath: z.string().optional(), name: z.string().optional(), text: z.string().optional(), checked: z.boolean().optional() },
+    async (params: any) => {
+      if (!state.hasPermission("full-edit")) return permissionError("full-edit");
+      const node = ((p: any) => ({
+  name: p.name ?? "Toggle",
+  className: "Frame",
+  properties: [
+    { name: "Size", type: "UDim2", value: "0,220,0,36" },
+    { name: "BackgroundTransparency", type: "number", value: "1" },
+  ],
+  children: [
+    { name: "Label", className: "TextLabel", properties: [
+      { name: "Size", type: "UDim2", value: "1,-52,1,0" },
+      { name: "BackgroundTransparency", type: "number", value: "1" },
+      { name: "Text", type: "string", value: p.text ?? "Toggle" },
+      { name: "TextColor3", type: "Color3", value: "1,1,1" },
+      { name: "TextXAlignment", type: "EnumItem", value: "Enum.TextXAlignment.Left" },
+      { name: "TextScaled", type: "boolean", value: "true" },
+    ] },
+    { name: "Track", className: "Frame", properties: [
+      { name: "Size", type: "UDim2", value: "0,44,0,24" },
+      { name: "Position", type: "UDim2", value: "1,-44,0.5,0" },
+      { name: "AnchorPoint", type: "Vector2", value: "0,0.5" },
+      { name: "BackgroundColor3", type: "Color3", value: p.checked ? "0.25,0.75,0.4" : "0.35,0.35,0.38" },
+      { name: "BorderSizePixel", type: "number", value: "0" },
+    ], children: [
+      { name: "UICorner", className: "UICorner", properties: [{ name: "CornerRadius", type: "UDim", value: "0,999" }] },
+      { name: "Knob", className: "Frame", properties: [
+        { name: "Size", type: "UDim2", value: "0,18,0,18" },
+        { name: "Position", type: "UDim2", value: p.checked ? "1,-2,0.5,0" : "0,2,0.5,0" },
+        { name: "AnchorPoint", type: "Vector2", value: p.checked ? "1,0.5" : "0,0.5" },
+        { name: "BackgroundColor3", type: "Color3", value: "1,1,1" },
+        { name: "BorderSizePixel", type: "number", value: "0" },
+      ], children: [
+        { name: "UICorner", className: "UICorner", properties: [{ name: "CornerRadius", type: "UDim", value: "0,999" }] },
+      ] },
+    ] },
+  ],
+}))(params);
+      const result = await sendStudioCommand(state, state.isStudioConnected.bind(state), HEARTBEAT_STALE_MS, "import_ui", {
+        parentPath: params.parentPath ?? "game.StarterGui",
+        node,
+      });
+      return okText(result);
+    },
+  );
+
+
+  server.tool(
+    "openstudio_ui_tabbar",
+    "Create a horizontal tab bar with tabs.",
+    { parentPath: z.string().optional(), name: z.string().optional(), tabs: z.array(z.string()).min(1).max(12).optional(), width: z.number().int().min(1).max(4096).optional() },
+    async (params: any) => {
+      if (!state.hasPermission("full-edit")) return permissionError("full-edit");
+      const node = ((p: any) => {
+  const tabs = p.tabs ?? ["Tab 1", "Tab 2", "Tab 3"];
+  return {
+    name: p.name ?? "TabBar",
+    className: "Frame",
+    properties: [
+      { name: "Size", type: "UDim2", value: "0," + (p.width ?? 360) + ",0,40" },
+      { name: "BackgroundColor3", type: "Color3", value: "0.12,0.12,0.14" },
+      { name: "BorderSizePixel", type: "number", value: "0" },
+    ],
+    children: [
+      { name: "UIListLayout", className: "UIListLayout", properties: [
+        { name: "FillDirection", type: "EnumItem", value: "Enum.FillDirection.Horizontal" },
+        { name: "Padding", type: "UDim", value: "0,6" },
+        { name: "SortOrder", type: "EnumItem", value: "Enum.SortOrder.LayoutOrder" },
+      ] },
+      { name: "UIPadding", className: "UIPadding", properties: [
+        { name: "PaddingLeft", type: "UDim", value: "0,6" },
+        { name: "PaddingTop", type: "UDim", value: "0,4" },
+        { name: "PaddingBottom", type: "UDim", value: "0,4" },
+      ] },
+      ...tabs.map((t: string, i: number) => ({
+        name: "Tab" + (i + 1),
+        className: "TextButton",
+        properties: [
+          { name: "Size", type: "UDim2", value: "0,0,1,0" },
+          { name: "AutomaticSize", type: "EnumItem", value: "Enum.AutomaticSize.X" },
+          { name: "BackgroundColor3", type: "Color3", value: i === 0 ? "0.28,0.55,0.98" : "0.2,0.2,0.22" },
+          { name: "Text", type: "string", value: t },
+          { name: "TextColor3", type: "Color3", value: "1,1,1" },
+          { name: "TextScaled", type: "boolean", value: "true" },
+          { name: "BorderSizePixel", type: "number", value: "0" },
+        ],
+        children: [{ name: "UICorner", className: "UICorner", properties: [{ name: "CornerRadius", type: "UDim", value: "0,8" }] }],
+      })),
+    ],
+  };
+})(params);
+      const result = await sendStudioCommand(state, state.isStudioConnected.bind(state), HEARTBEAT_STALE_MS, "import_ui", {
+        parentPath: params.parentPath ?? "game.StarterGui",
+        node,
+      });
+      return okText(result);
+    },
+  );
+
+
+  server.tool(
+    "openstudio_ui_toast",
+    "Create a toast notification widget.",
+    { parentPath: z.string().optional(), name: z.string().optional(), text: z.string().optional(), type: z.enum(["info", "success", "warning", "error"]).optional() },
+    async (params: any) => {
+      if (!state.hasPermission("full-edit")) return permissionError("full-edit");
+      const node = ((p: any) => {
+  const tones: any = { info: "0.2,0.45,0.95", success: "0.2,0.72,0.35", warning: "0.95,0.7,0.2", error: "0.9,0.25,0.25" };
+  const tone = tones[p.type ?? "info"];
+  return {
+    name: p.name ?? "Toast",
+    className: "Frame",
+    properties: [
+      { name: "Size", type: "UDim2", value: "0,320,0,48" },
+      { name: "Position", type: "UDim2", value: "0.5,0,1,0" },
+      { name: "AnchorPoint", type: "Vector2", value: "0.5,1" },
+      { name: "BackgroundColor3", type: "Color3", value: tone },
+      { name: "BorderSizePixel", type: "number", value: "0" },
+    ],
+    children: [
+      { name: "UICorner", className: "UICorner", properties: [{ name: "CornerRadius", type: "UDim", value: "0,10" }] },
+      { name: "UIStroke", className: "UIStroke", properties: [{ name: "Color", type: "Color3", value: "1,1,1" }, { name: "Thickness", type: "number", value: "0" }, { name: "Transparency", type: "number", value: "0.7" }] },
+      { name: "Message", className: "TextLabel", properties: [
+        { name: "Size", type: "UDim2", value: "1,-16,1,0" },
+        { name: "Position", type: "UDim2", value: "0,8,0,0" },
+        { name: "BackgroundTransparency", type: "number", value: "1" },
+        { name: "Text", type: "string", value: p.text ?? "Notification" },
+        { name: "TextColor3", type: "Color3", value: "1,1,1" },
+        { name: "TextScaled", type: "boolean", value: "true" },
+      ] },
+    ],
+  };
+})(params);
+      const result = await sendStudioCommand(state, state.isStudioConnected.bind(state), HEARTBEAT_STALE_MS, "import_ui", {
+        parentPath: params.parentPath ?? "game.StarterGui",
+        node,
+      });
+      return okText(result);
+    },
+  );
+
+
+
+  server.tool(
+    "openstudio_runtime_status",
+    "Report whether Studio is currently in run/play mode and return recent buffered output.",
+    {},
+    async () => {
+      try {
+        const result = await sendStudioCommand(state, state.isStudioConnected.bind(state), HEARTBEAT_STALE_MS, "execute_lua", {
+          code: "local rs = game:GetService('RunService'); return 'runMode=' .. tostring(rs:IsRunMode()) .. '; studio=' .. tostring(rs:IsStudio()) .. '; client=' .. tostring(rs:IsClient()) .. '; server=' .. tostring(rs:IsServer())",
+        });
+        const logs = state.drainLogs();
+        return okText({ ok: true, runtime: result, recentLogs: logs.slice(-25) });
+      } catch (error) {
+        return okText({ ok: false, error: error instanceof Error ? error.message : String(error) });
+      }
+    },
+  );
+
+  server.tool(
+    "openstudio_runtime_assert",
+    "Run a Luau assertion/check in the Studio plugin context and report pass/fail with logs.",
+    {
+      code: z.string().min(1),
+      confirm: z.boolean().optional(),
+    },
+    async ({ code, confirm }) => {
+      if (!confirm) {
+        return okText({ ok: false, error: "Pass confirm: true to run a runtime assertion." });
+      }
+      if (!state.hasPermission("full-edit")) return permissionError("full-edit");
+      try {
+        const result = await sendStudioCommand(state, state.isStudioConnected.bind(state), HEARTBEAT_STALE_MS, "execute_lua", { code });
+        const logs = state.drainLogs();
+        const passed = Boolean(result && (result as any).ok);
+        return okText({ ok: passed, result, recentLogs: logs.slice(-25) });
+      } catch (error) {
+        return okText({ ok: false, error: error instanceof Error ? error.message : String(error) });
+      }
     },
   );
 
