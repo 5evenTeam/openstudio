@@ -1,0 +1,45 @@
+{
+  "name": "openstudio",
+  "version": "0.1.0",
+  "description": "MCP bridge between OpenCode and Roblox Studio",
+  "license": "MIT",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "openstudio": "dist/index.js"
+  },
+  "files": [
+    "OpenStudio.bat",
+    "dist",
+    "blender",
+    "studio",
+    "scripts",
+    "README.md",
+    "LICENSE"
+  ],
+  "keywords": [
+    "opencode",
+    "mcp",
+    "roblox",
+    "roblox-studio",
+    "blender",
+    "figma"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "start": "node dist/index.js",
+    "clean": "rimraf dist",
+    "test": "npm run build && node --test tests/*.mjs",
+    "update": "npm install && npm run build"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.32.2",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "rimraf": "^6.0.1",
+    "typescript": "^5.6.0"
+  }
+}
