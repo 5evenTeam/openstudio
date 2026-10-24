@@ -1,6 +1,6 @@
 {
   "name": "openstudio",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "MCP bridge between OpenCode and Roblox Studio",
   "license": "MIT",
   "type": "module",
@@ -22,8 +22,7 @@
     "mcp",
     "roblox",
     "roblox-studio",
-    "blender",
-    "figma"
+    "blender"
   ],
   "scripts": {
     "build": "tsc",

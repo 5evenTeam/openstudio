@@ -5,7 +5,6 @@ import { z } from "zod";
 import { BridgeState } from "./bridge/state.js";
 import { BRIDGE_VERSION, HEARTBEAT_STALE_MS, STUDIO_TIMEOUT_MS, UPDATE_MANIFEST_URL, runtimeDir } from "./config.js";
 import { sendStudioCommand } from "./bridge/dispatch.js";
-import { fetchFigmaUiPlan } from "./figma.js";
 
 export function registerTools(server: McpServer, state: BridgeState): void {
   const okText = (value: unknown) => ({
@@ -245,37 +244,7 @@ export function registerTools(server: McpServer, state: BridgeState): void {
       return okText(result);
     },
   );
-  server.tool(
-    "openstudio_import_figma",
-    "Fetch a Figma node and generate Roblox UI in Roblox Studio",
-    {
-      fileKey: z.string().min(1),
-      nodeId: z.string().optional(),
-      parentPath: z.string().optional(),
-      maxNodes: z.number().int().min(1).max(1000).optional(),
-      rootName: z.string().optional(),
-      figmaToken: z.string().optional(),
-    },
-    async ({ fileKey, nodeId, parentPath, maxNodes, rootName, figmaToken }) => {
-      if (!state.hasPermission("full-edit")) {
-        return permissionError("full-edit");
-      }
-      try {
-        const plan = await fetchFigmaUiPlan(fileKey, nodeId, { maxNodes, rootName, token: figmaToken });
-        const result = await sendStudioCommand(state, state.isStudioConnected.bind(state), HEARTBEAT_STALE_MS, "import_figma", {
-          parentPath: parentPath ?? "game.StarterGui",
-          node: plan,
-        });
-        return okText(result);
-      } catch (error) {
-        return okText({
-          ok: false,
-          error: error instanceof Error ? error.message : String(error),
-        });
-      }
-    },
-  );
-  server.tool(
+ server.tool(
     "openstudio_import_blender",
     "Import a Blender scene export into Roblox Studio as positioned Parts",
     {

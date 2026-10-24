@@ -21,7 +21,6 @@ export type StudioCommandType =
   | "rename_instance"
   | "search_instances"
   | "inspect_instance"
-  | "import_figma"
   | "import_blender"
   | "execute_lua";
 
@@ -247,3 +246,4 @@ export class BridgeState {
     return order.indexOf(this.permissionLevel) >= order.indexOf(required);
   }
 }
+

@@ -59,7 +59,6 @@ local function heartbeat()
             "create_instance",
             "set_property",
             "delete_instance",
-            "import_figma",
             "import_blender",
             "execute_lua",
             "rename_instance",
@@ -374,48 +373,6 @@ local function executeCommand(command)
         end
         target:Destroy()
         return true, { path = command.payload.path, deleted = true }
-    elseif command.type == "import_figma" then
-        local parent, err = resolvePath(command.payload.parentPath)
-        if not parent then
-            return false, err
-        end
-        local createdCount = 0
-        local function buildNode(definition, parentNode)
-            if type(definition) ~= "table" then
-                return nil, "Invalid node definition"
-            end
-            local newInstance = nil
-            local createOk = pcall(function()
-                newInstance = Instance.new(definition.className)
-            end)
-            if not createOk or not newInstance then
-                return nil, "Unable to create " .. tostring(definition.className)
-            end
-            newInstance.Name = definition.name or definition.className
-            if type(definition.properties) == "table" then
-                for _, property in ipairs(definition.properties) do
-                    local ok, converted = convertPropertyValue(property.type, property.value)
-                    if ok then
-                        pcall(function()
-                            newInstance[property.name] = converted
-                        end)
-                    end
-                end
-            end
-            if type(definition.children) == "table" then
-                for _, childDefinition in ipairs(definition.children) do
-                    buildNode(childDefinition, newInstance)
-                end
-            end
-            newInstance.Parent = parentNode
-            createdCount = createdCount + 1
-            return newInstance
-        end
-        local rootInstance, buildErr = buildNode(command.payload.node, parent)
-        if not rootInstance then
-            return false, buildErr or "Unable to import Figma node"
-        end
-        return true, { root = getPathString(rootInstance), created = createdCount }
     elseif command.type == "import_blender" then
         local parent, err = resolvePath(command.payload.parentPath)
         if not parent then
@@ -621,3 +578,4 @@ if Plugin then
 else
     task.spawn(pollLoop)
 end
+

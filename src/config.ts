@@ -32,7 +32,6 @@ export const STUDIO_TIMEOUT_MS = envNumber("OPENSTUDIO_STUDIO_TIMEOUT_MS", 15_00
 export const HEARTBEAT_STALE_MS = envNumber("OPENSTUDIO_HEARTBEAT_STALE_MS", 10_000);
 export const BRIDGE_VERSION = readPackageVersion();
 export const UPDATE_MANIFEST_URL = process.env.OPENSTUDIO_UPDATE_MANIFEST_URL;
-export const FIGMA_ACCESS_TOKEN = process.env.FIGMA_ACCESS_TOKEN;
 export const PERMISSION_LEVEL = (process.env.OPENSTUDIO_PERMISSIONS ?? "scripts-only") as
   | "read-only"
   | "scripts-only"
@@ -55,3 +54,4 @@ export function tokenPath(): string {
 export function makeCommandId(): string {
   return randomBytes(8).toString("hex");
 }
+
