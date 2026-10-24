@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>OpenStudio — MCP Bridge for Roblox Studio</title>
+  <meta name="description" content="OpenStudio connects OpenCode (and other MCP clients) to a live Roblox Studio session for editing, UI building, testing, and inspection." />
+  <style>
+    :root {
+      --bg: #070b12;
+      --bg2: #0e1522;
+      --panel: rgba(255,255,255,0.05);
+      --border: rgba(255,255,255,0.1);
+      --text: #f5f7fb;
+      --muted: #a9b4c7;
+      --accent: #7f9cff;
+      --accent2: #47e3c0;
+      --warn: #ffb454;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; font-family: Inter, Segoe UI, system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--text); }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .wrap { max-width: 1180px; margin: 0 auto; padding: 0 24px; }
+    nav { display: flex; justify-content: space-between; align-items: center; padding: 20px 0; }
+    .brand { display: flex; align-items: center; gap: 12px; font-weight: 800; font-size: 1.15rem; }
+    .logo { width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; background: linear-gradient(135deg, var(--accent), var(--accent2)); color: #071018; font-weight: 900; }
+    .nav-links { display: flex; gap: 18px; color: var(--muted); font-size: .95rem; }
+    .hero { padding: 72px 0 40px; display: grid; grid-template-columns: 1.15fr .85fr; gap: 40px; align-items: center; }
+    .hero h1 { font-size: clamp(2.4rem, 5vw, 4.2rem); line-height: 1.02; margin: 0 0 18px; letter-spacing: -.03em; }
+    .hero p { color: var(--muted); font-size: 1.15rem; line-height: 1.6; margin: 0 0 26px; max-width: 640px; }
+    .hero-actions { display: flex; gap: 14px; flex-wrap: wrap; }
+    .btn { padding: 14px 22px; border-radius: 14px; font-weight: 700; display: inline-flex; align-items: center; gap: 10px; border: 1px solid var(--border); }
+    .btn-primary { background: linear-gradient(135deg, var(--accent), var(--accent2)); color: #071018; border-color: transparent; }
+    .btn-ghost { background: var(--panel); }
+    .card { background: var(--panel); border: 1px solid var(--border); border-radius: 20px; padding: 24px; backdrop-filter: blur(8px); }
+    .code { background: #05080f; border: 1px solid var(--border); border-radius: 16px; padding: 20px; font-family: Consolas, monospace; font-size: .9rem; overflow: auto; color: #dce6ff; }
+    .features { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; margin: 36px 0 10px; }
+    .feat h3 { margin: 0 0 10px; font-size: 1.15rem; }
+    .feat p { color: var(--muted); line-height: 1.5; margin: 0; }
+    .feat .tag { display: inline-block; margin-bottom: 12px; font-size: .75rem; letter-spacing: .08em; text-transform: uppercase; color: var(--accent2); }
+    .section { margin: 70px 0; }
+    .section h2 { font-size: 2rem; margin: 0 0 8px; letter-spacing: -.02em; }
+    .section .sub { color: var(--muted); font-size: 1.05rem; margin: 0 0 24px; }
+    .tools { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
+    .tool { background: var(--bg2); border: 1px solid var(--border); border-radius: 16px; padding: 18px; }
+    .tool h4 { margin: 0 0 8px; font-family: Consolas, monospace; color: var(--accent); font-size: .95rem; }
+    .tool p { margin: 0; color: var(--muted); font-size: .9rem; line-height: 1.45; }
+    .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+    .step { background: var(--panel); border: 1px solid var(--border); border-radius: 18px; padding: 20px; }
+    .step .num { color: var(--accent2); font-weight: 800; margin-bottom: 8px; }
+    footer { margin: 60px 0 30px; border-top: 1px solid var(--border); padding-top: 24px; color: var(--muted); font-size: .9rem; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+    @media (max-width: 900px) {
+      .hero { grid-template-columns: 1fr; }
+      .features, .tools, .steps { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <nav>
+      <div class="brand"><div class="logo">OS</div><span>OpenStudio</span></div>
+      <div class="nav-links">
+        <a href="#features">Features</a>
+        <a href="#install">Install</a>
+        <a href="#tools">Tools</a>
+        <a href="https://github.com/5evenTeam/openstudio">GitHub</a>
+      </div>
+    </nav>
+
+    <section class="hero">
+      <div>
+        <h1>Bridge OpenCode to <span style="background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;background-clip:text;color:transparent;">Roblox Studio</span>.</h1>
+        <p>
+          OpenStudio is a local MCP bridge that lets AI agents inspect, edit, and build inside a live Roblox Studio session — scripts, UI, instances, logs, screenshots, tests, and more.
+        </p>
+        <div class="hero-actions">
+          <a class="btn btn-primary" href="https://github.com/5evenTeam/openstudio/releases/latest">Download Latest</a>
+          <a class="btn btn-ghost" href="https://github.com/5evenTeam/openstudio">View Source</a>
+        </div>
+      </div>
+      <div class="card">
+        <div class="code">
+$ openstudio_status
+{
+  "bridge": "running",
+  "studioConnected": true,
+  "permissionLevel": "scripts-only",
+  "pendingCommands": 0
+}
+        </div>
+      </div>
+    </section>
+
+    <section id="features" class="section">
+      <h2>Built for Roblox production workflows</h2>
+      <p class="sub">Everything stays local on 127.0.0.1 and works through the normal Roblox Studio plugin flow.</p>
+      <div class="features">
+        <div class="card feat">
+          <span class="tag">Realtime</span>
+          <h3>Long-poll bridge</h3>
+          <p>Near-instant command delivery with an HTTP bridge and a Roblox plugin poll loop.</p>
+        </div>
+        <div class="card feat">
+          <span class="tag">Safety</span>
+          <h3>Permissions & backups</h3>
+          <p>Three permission levels, confirmation gates for destructive ops, and automatic script backups.</p>
+        </div>
+        <div class="card feat">
+          <span class="tag">UI</span>
+          <h3>StudioUI builder</h3>
+          <p>Create complete Roblox UI trees from declarative node definitions, plus presets for panels, buttons, toggles, and lists.</p>
+        </div>
+        <div class="card feat">
+          <span class="tag">Inspection</span>
+          <h3>Instance tools</h3>
+          <p>Read/write scripts, inspect instance trees, search, inspect, create, rename, and delete instances.</p>
+        </div>
+        <div class="card feat">
+          <span class="tag">Testing</span>
+          <h3>Game-wide tests</h3>
+          <p>Compile scripts and scan UI for common issues like zero-size elements and empty labels.</p>
+        </div>
+        <div class="card feat">
+          <span class="tag">Capture</span>
+          <h3>Screen capture</h3>
+          <p>Capture the Roblox Studio window as PNG and receive it inline in the MCP conversation.</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="install" class="section">
+      <h2>Install in minutes</h2>
+      <p class="sub">Requires Node.js 20+, OpenCode, and Roblox Studio.</p>
+      <div class="steps">
+        <div class="step">
+          <div class="num">1. Clone & build</div>
+          <p>Clone the repository, run <code>npm install</code>, then <code>npm run build</code>.</p>
+        </div>
+        <div class="step">
+          <div class="num">2. Configure OpenCode</div>
+          <p>Point your OpenCode MCP config at <code>C:\OpenStudio\scripts\OpenStudio.bat</code> (Windows launcher).</p>
+        </div>
+        <div class="step">
+          <div class="num">3. Install the plugin</div>
+          <p>Paste <code>studio/OpenStudioPlugin.luau</code> into Roblox Studio as a plugin and click Connect.</p>
+        </div>
+      </div>
+      <div class="code" style="margin-top:24px;">
+{
+  "mcp": {
+    "openstudio": {
+      "type": "local",
+      "command": "C:\\\\OpenStudio\\\\scripts\\\\OpenStudio.bat",
+      "args": []
+    }
+  }
+}
+      </div>
+    </section>
+
+    <section id="tools" class="section">
+      <h2>Featured tools</h2>
+      <p class="sub">A growing catalog of script, instance, UI, and diagnostics tools.</p>
+      <div class="tools">
+        <div class="tool"><h4>openstudio_status</h4><p>Bridge + Studio connection status and capabilities.</p></div>
+        <div class="tool"><h4>openstudio_connect</h4><p>Wait for the Studio plugin to connect.</p></div>
+        <div class="tool"><h4>openstudio_list_scripts</h4><p>List scripts in the open place.</p></div>
+        <div class="tool"><h4>openstudio_read_script</h4><p>Read any script source by instance path.</p></div>
+        <div class="tool"><h4>openstudio_write_script</h4><p>Write script source with automatic backups.</p></div>
+        <div class="tool"><h4>openstudio_get_instance_tree</h4><p>Browse the DataModel within bounds.</p></div>
+        <div class="tool"><h4>openstudio_create_ui</h4><p>Build UI from declarative node trees.</p></div>
+        <div class="tool"><h4>openstudio_test</h4><p>Structural code/UI test of the whole game.</p></div>
+      </div>
+    </section>
+
+    <footer>
+      <div>© OpenStudio contributors — MIT License</div>
+      <div>
+        <a href="https://github.com/5evenTeam/openstudio">GitHub</a> ·
+        <a href="https://github.com/5evenTeam/openstudio/releases">Releases</a>
+      </div>
+    </footer>
+  </div>
+</body>
+</html>
