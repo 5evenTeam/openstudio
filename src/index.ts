@@ -5,7 +5,7 @@ import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import { BridgeState } from "./bridge/state.js";
 import { createBridgeHttpServer } from "./bridge/httpServer.js";
 import { registerTools } from "./tools.js";
-import { BRIDGE_TOKEN, PROJECT_NAME, runtimeDir, tokenPath } from "./config.js";
+import { BRIDGE_TOKEN, BRIDGE_VERSION, PROJECT_NAME, runtimeDir, tokenPath } from "./config.js";
 
 async function main(): Promise<void> {
   const dir = runtimeDir();
@@ -18,7 +18,7 @@ async function main(): Promise<void> {
 
   const server = new McpServer({
     name: PROJECT_NAME,
-    version: "0.1.0",
+    version: BRIDGE_VERSION,
   });
 
   registerTools(server, state);

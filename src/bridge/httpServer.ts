@@ -210,6 +210,7 @@ export function createBridgeHttpServer(state: BridgeState): BridgeHttpServer {
 
   return {
     listen(): void {
+      server.on("error", (error) => { console.error("[OpenStudio] bridge error:", (error as Error).message); });
       server.listen(BRIDGE_PORT, BRIDGE_HOST, () => {
         console.error(`[OpenStudio] bridge listening on http://${BRIDGE_HOST}:${BRIDGE_PORT}`);
       });
@@ -219,3 +220,4 @@ export function createBridgeHttpServer(state: BridgeState): BridgeHttpServer {
     },
   };
 }
+
