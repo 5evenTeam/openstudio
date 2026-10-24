@@ -977,6 +977,182 @@ export function registerTools(server: McpServer, state: BridgeState): void {
     },
   );
 
+
+  function uiColorTuple(hexOrCsv?: string, fallback = "0.2,0.2,0.2") {
+    return hexOrCsv && hexOrCsv.trim() ? hexOrCsv.trim() : fallback;
+  }
+
+  server.tool(
+    "openstudio_ui_panel",
+    "Create a styled UI panel (Frame) with optional title.",
+    {
+      parentPath: z.string().optional(),
+      name: z.string().optional(),
+      width: z.number().int().min(1).max(4096).optional(),
+      height: z.number().int().min(1).max(4096).optional(),
+      background: z.string().optional(),
+      title: z.string().optional(),
+    },
+    async ({ parentPath, name, width, height, background, title }) => {
+      if (!state.hasPermission("full-edit")) return permissionError("full-edit");
+      const w = width ?? 320;
+      const h = height ?? 240;
+      const bg = uiColorTuple(background, "0.16,0.16,0.18");
+      const panelName = name ?? "Panel";
+      const children: any[] = [];
+      if (title) {
+        children.push({
+          name: title + "Title",
+          className: "TextLabel",
+          properties: [
+            { name: "Size", type: "UDim2", value: "1,0,0,36" },
+            { name: "BackgroundTransparency", type: "number", value: "1" },
+            { name: "Text", type: "string", value: title },
+            { name: "TextColor3", type: "Color3", value: "1,1,1" },
+            { name: "TextScaled", type: "boolean", value: "true" },
+          ],
+        });
+      }
+      children.push({
+        name: "UIPadding",
+        className: "UIPadding",
+        properties: [
+          { name: "PaddingLeft", type: "UDim", value: "0,12" },
+          { name: "PaddingRight", type: "UDim", value: "0,12" },
+          { name: "PaddingTop", type: "UDim", value: "0,12" },
+          { name: "PaddingBottom", type: "UDim", value: "0,12" },
+        ],
+      });
+      children.push({
+        name: "UICorner",
+        className: "UICorner",
+        properties: [{ name: "CornerRadius", type: "UDim", value: "0,12" }],
+      });
+      const node = {
+        name: panelName,
+        className: "Frame",
+        properties: [
+          { name: "Size", type: "UDim2", value: "0," + w + ",0," + h },
+          { name: "Position", type: "UDim2", value: "0.5,0,0.5,0" },
+          { name: "AnchorPoint", type: "Vector2", value: "0.5,0.5" },
+          { name: "BackgroundColor3", type: "Color3", value: bg },
+          { name: "BorderSizePixel", type: "number", value: "0" },
+        ],
+        children,
+      };
+      const result = await sendStudioCommand(state, state.isStudioConnected.bind(state), HEARTBEAT_STALE_MS, "import_ui", {
+        parentPath: parentPath ?? "game.StarterGui",
+        node,
+      });
+      return okText(result);
+    },
+  );
+
+  server.tool(
+    "openstudio_ui_button",
+    "Create a clickable-looking UI button.",
+    {
+      parentPath: z.string().optional(),
+      name: z.string().optional(),
+      text: z.string().optional(),
+      width: z.number().int().min(1).max(4096).optional(),
+      height: z.number().int().min(1).max(4096).optional(),
+      background: z.string().optional(),
+      textColor: z.string().optional(),
+    },
+    async ({ parentPath, name, text, width, height, background, textColor }) => {
+      if (!state.hasPermission("full-edit")) return permissionError("full-edit");
+      const w = width ?? 180;
+      const h = height ?? 48;
+      const bg = uiColorTuple(background, "0.2,0.45,0.9");
+      const fg = uiColorTuple(textColor, "1,1,1");
+      const buttonName = name ?? "Button";
+      const node = {
+        name: buttonName,
+        className: "TextButton",
+        properties: [
+          { name: "Size", type: "UDim2", value: "0," + w + ",0," + h },
+          { name: "BackgroundColor3", type: "Color3", value: bg },
+          { name: "Text", type: "string", value: text ?? "Button" },
+          { name: "TextColor3", type: "Color3", value: fg },
+          { name: "TextScaled", type: "boolean", value: "true" },
+          { name: "BorderSizePixel", type: "number", value: "0" },
+          { name: "AutoButtonColor", type: "boolean", value: "true" },
+        ],
+        children: [
+          {
+            name: "UICorner",
+            className: "UICorner",
+            properties: [{ name: "CornerRadius", type: "UDim", value: "0,8" }],
+          },
+        ],
+      };
+      const result = await sendStudioCommand(state, state.isStudioConnected.bind(state), HEARTBEAT_STALE_MS, "import_ui", {
+        parentPath: parentPath ?? "game.StarterGui",
+        node,
+      });
+      return okText(result);
+    },
+  );
+
+  server.tool(
+    "openstudio_ui_list",
+    "Create a list container (ScrollingFrame with UIListLayout).",
+    {
+      parentPath: z.string().optional(),
+      name: z.string().optional(),
+      width: z.number().int().min(1).max(4096).optional(),
+      height: z.number().int().min(1).max(4096).optional(),
+      fillDirection: z.enum(["Vertical", "Horizontal"]).optional(),
+      padding: z.number().int().min(0).max(64).optional(),
+    },
+    async ({ parentPath, name, width, height, fillDirection, padding }) => {
+      if (!state.hasPermission("full-edit")) return permissionError("full-edit");
+      const w = width ?? 300;
+      const h = height ?? 400;
+      const pad = padding ?? 8;
+      const dir = fillDirection ?? "Vertical";
+      const node = {
+        name: name ?? "List",
+        className: "ScrollingFrame",
+        properties: [
+          { name: "Size", type: "UDim2", value: "0," + w + ",0," + h },
+          { name: "CanvasSize", type: "UDim2", value: "0,0,0,0" },
+          { name: "AutomaticCanvasSize", type: "EnumItem", value: dir === "Vertical" ? "Enum.AutomaticSize.Y" : "Enum.AutomaticSize.X" },
+          { name: "ScrollBarThickness", type: "number", value: "6" },
+          { name: "BorderSizePixel", type: "number", value: "0" },
+          { name: "BackgroundColor3", type: "Color3", value: "0.12,0.12,0.12" },
+        ],
+        children: [
+          {
+            name: "UIListLayout",
+            className: "UIListLayout",
+            properties: [
+              { name: "FillDirection", type: "EnumItem", value: "Enum.FillDirection." + dir },
+              { name: "Padding", type: "UDim", value: "0," + pad },
+              { name: "SortOrder", type: "EnumItem", value: "Enum.SortOrder.LayoutOrder" },
+            ],
+          },
+          {
+            name: "UIPadding",
+            className: "UIPadding",
+            properties: [
+              { name: "PaddingLeft", type: "UDim", value: "0," + pad },
+              { name: "PaddingRight", type: "UDim", value: "0," + pad },
+              { name: "PaddingTop", type: "UDim", value: "0," + pad },
+              { name: "PaddingBottom", type: "UDim", value: "0," + pad },
+            ],
+          },
+        ],
+      };
+      const result = await sendStudioCommand(state, state.isStudioConnected.bind(state), HEARTBEAT_STALE_MS, "import_ui", {
+        parentPath: parentPath ?? "game.StarterGui",
+        node,
+      });
+      return okText(result);
+    },
+  );
+
 // Keep the previous version tool in sync with config.
   // (No-op here; openstudio_version already returns bridge metadata.)
 }
