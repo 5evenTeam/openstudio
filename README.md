@@ -166,7 +166,7 @@ Blender example:
 }
 ```
 
-## Testing and validation
+## Testing, diagnostics, and validation
 
 - `openstudio_test` / `openstudio_test_game`: compiles scripts and reports UI/structural issues.
 - `openstudio_runtime_status`: whether Studio is in run/play mode plus recent logs.
