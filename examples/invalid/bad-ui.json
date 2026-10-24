@@ -1,0 +1,16 @@
+{
+  "name": "BadUI",
+  "className": "ScreenGui",
+  "children": [
+    {
+      "name": "MissingClassName",
+      "properties": [
+        {
+          "name": "Size",
+          "type": "UDim2",
+          "value": "not-a-size"
+        }
+      ]
+    }
+  ]
+}

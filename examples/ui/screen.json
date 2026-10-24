@@ -1,0 +1,203 @@
+{
+  "name": "StudioUI",
+  "className": "ScreenGui",
+  "properties": [
+    {
+      "name": "ResetOnSpawn",
+      "type": "boolean",
+      "value": "false"
+    }
+  ],
+  "children": [
+    {
+      "name": "Panel",
+      "className": "Frame",
+      "properties": [
+        {
+          "name": "Size",
+          "type": "UDim2",
+          "value": "0,420,0,260"
+        },
+        {
+          "name": "Position",
+          "type": "UDim2",
+          "value": "0.5,0,0.5,0"
+        },
+        {
+          "name": "AnchorPoint",
+          "type": "Vector2",
+          "value": "0.5,0.5"
+        },
+        {
+          "name": "BackgroundColor3",
+          "type": "Color3",
+          "value": "0.14,0.14,0.16"
+        },
+        {
+          "name": "BorderSizePixel",
+          "type": "number",
+          "value": "0"
+        }
+      ],
+      "children": [
+        {
+          "name": "UICorner",
+          "className": "UICorner",
+          "properties": [
+            {
+              "name": "CornerRadius",
+              "type": "UDim",
+              "value": "0,16"
+            }
+          ]
+        },
+        {
+          "name": "Title",
+          "className": "TextLabel",
+          "properties": [
+            {
+              "name": "Size",
+              "type": "UDim2",
+              "value": "1,-24,0,34"
+            },
+            {
+              "name": "Position",
+              "type": "UDim2",
+              "value": "0,12,0,10"
+            },
+            {
+              "name": "BackgroundTransparency",
+              "type": "number",
+              "value": "1"
+            },
+            {
+              "name": "Text",
+              "type": "string",
+              "value": "OpenStudio UI"
+            },
+            {
+              "name": "TextColor3",
+              "type": "Color3",
+              "value": "1,1,1"
+            },
+            {
+              "name": "TextXAlignment",
+              "type": "EnumItem",
+              "value": "Enum.TextXAlignment.Left"
+            },
+            {
+              "name": "TextScaled",
+              "type": "boolean",
+              "value": "true"
+            }
+          ]
+        },
+        {
+          "name": "Body",
+          "className": "TextLabel",
+          "properties": [
+            {
+              "name": "Size",
+              "type": "UDim2",
+              "value": "1,-24,1,-52"
+            },
+            {
+              "name": "Position",
+              "type": "UDim2",
+              "value": "0,12,0,48"
+            },
+            {
+              "name": "BackgroundTransparency",
+              "type": "number",
+              "value": "1"
+            },
+            {
+              "name": "Text",
+              "type": "string",
+              "value": "A sample panel created by StudioUI."
+            },
+            {
+              "name": "TextColor3",
+              "type": "Color3",
+              "value": "0.82,0.82,0.86"
+            },
+            {
+              "name": "TextWrapped",
+              "type": "boolean",
+              "value": "true"
+            },
+            {
+              "name": "TextYAlignment",
+              "type": "EnumItem",
+              "value": "Enum.TextYAlignment.Top"
+            },
+            {
+              "name": "TextXAlignment",
+              "type": "EnumItem",
+              "value": "Enum.TextXAlignment.Left"
+            }
+          ]
+        },
+        {
+          "name": "Button",
+          "className": "TextButton",
+          "properties": [
+            {
+              "name": "Size",
+              "type": "UDim2",
+              "value": "0,160,0,40"
+            },
+            {
+              "name": "Position",
+              "type": "UDim2",
+              "value": "1,-172,1,-52"
+            },
+            {
+              "name": "AnchorPoint",
+              "type": "Vector2",
+              "value": "0,1"
+            },
+            {
+              "name": "BackgroundColor3",
+              "type": "Color3",
+              "value": "0.24,0.5,0.98"
+            },
+            {
+              "name": "BorderSizePixel",
+              "type": "number",
+              "value": "0"
+            },
+            {
+              "name": "Text",
+              "type": "string",
+              "value": "Continue"
+            },
+            {
+              "name": "TextColor3",
+              "type": "Color3",
+              "value": "1,1,1"
+            },
+            {
+              "name": "TextScaled",
+              "type": "boolean",
+              "value": "true"
+            }
+          ],
+          "children": [
+            {
+              "name": "UICorner",
+              "className": "UICorner",
+              "properties": [
+                {
+                  "name": "CornerRadius",
+                  "type": "UDim",
+                  "value": "0,10"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
