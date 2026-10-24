@@ -1599,6 +1599,74 @@ export function registerTools(server: McpServer, state: BridgeState): void {
     },
   );
 
+
+  server.tool(
+    "openstudio_game_checkup",
+    "Run a combined structural + runtime diagnostic of the open place.",
+    {
+      root: z.string().optional(),
+      maxNodes: z.number().int().min(1).max(10000).optional(),
+      maxScripts: z.number().int().min(1).max(1000).optional(),
+    },
+    async ({ root, maxNodes, maxScripts }) => {
+      if (!state.hasPermission("read-only")) return permissionError("read-only");
+      try {
+        const structural = await sendStudioCommand(state, state.isStudioConnected.bind(state), HEARTBEAT_STALE_MS, "test_game", {
+          root: root ?? "game",
+          maxNodes: maxNodes ?? 3000,
+          maxScripts: maxScripts ?? 200,
+        });
+        let runtime = null;
+        try {
+          runtime = await sendStudioCommand(state, state.isStudioConnected.bind(state), HEARTBEAT_STALE_MS, "execute_lua", {
+            code: "local rs = game:GetService('RunService'); return 'runMode=' .. tostring(rs:IsRunMode()) .. '; client=' .. tostring(rs:IsClient()) .. '; server=' .. tostring(rs:IsServer())",
+          });
+        } catch (error) {
+          runtime = { ok: false, error: error instanceof Error ? error.message : String(error) };
+        }
+        const logs = state.drainLogs();
+        const result = {
+          ok: Boolean(structural && (structural as any).ok),
+          structural,
+          runtime,
+          recentLogs: logs.slice(-30),
+          summary: {
+            instanceCount: (structural as any)?.data?.instanceCount ?? null,
+            scriptCount: (structural as any)?.data?.scriptCount ?? null,
+            compileErrorCount: (structural as any)?.data?.compileErrorCount ?? null,
+            uiIssueCount: (structural as any)?.data?.uiIssueCount ?? null,
+            logsCaptured: logs.length,
+          },
+        };
+        return okText(result);
+      } catch (error) {
+        return okText({ ok: false, error: error instanceof Error ? error.message : String(error) });
+      }
+    },
+  );
+
+  server.tool(
+    "openstudio_collect_diagnostics",
+    "Collect bridge, Studio, permission, queue, and buffered log diagnostics.",
+    {},
+    async () => {
+      const logs = state.drainLogs();
+      return okText({
+        ok: true,
+        bridgeVersion: BRIDGE_VERSION,
+        studioConnected: state.isStudioConnected(HEARTBEAT_STALE_MS),
+        connection: state.connection
+          ? { clientId: state.connection.clientId, version: state.connection.version, gameName: state.connection.gameName, placeId: state.connection.placeId, lastHeartbeat: state.connection.lastHeartbeat }
+          : null,
+        permissionLevel: state.permissionLevel,
+        pendingCommands: state.pendingCount(),
+        queuedCommands: state.queueSize(),
+        bufferedLogs: logs.length,
+        recentLogs: logs.slice(-25),
+      });
+    },
+  );
+
 // Keep the previous version tool in sync with config.
   // (No-op here; openstudio_version already returns bridge metadata.)
 }
