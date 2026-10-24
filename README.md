@@ -1,141 +1,223 @@
 # OpenStudio
 
-OpenStudio is a local bridge that lets OpenCode inspect and edit scripts in an open Roblox Studio session through MCP.
+OpenStudio is a local MCP bridge and Roblox Studio plugin that lets OpenCode (and other MCP clients) inspect, edit, build, test, and capture Roblox Studio workflows.
 
-## Current status
+Current release: **v0.2.9**  
+Repository: https://github.com/5evenTeam/openstudio
 
-OpenStudio now implements a faster and broader bridge:
+## Features
 
-- Near real-time command delivery through long polling (`/commands?wait=...`).
-- MCP tools for Roblox Studio script read/write/create/delete/list.
-- Instance tree inspection, creation, property writes, deletion, rename, search, and inspection.
-- Output-log capture and permission-level management at runtime.
-- A localhost bridge used by the Studio plugin with safer request handling and bounded queues.
-- A launcher `.bat` that validates required processes and runs the bridge.
-- A Roblox Studio plugin that polls the bridge, long-polls for commands, and executes them.
-
-It remains a development-focused bridge. Playtest control may still require Studio-side support.
+- Script read/write/create/delete/list
+- Instance tree inspection, creation, rename, search, inspection, deletion
+- Declarative Roblox UI generation (StudioUI)
+- UI presets: panel, button, toggle, tab bar, toast, animated button
+- 3D model/part assembly from structured object descriptions
+- Blender scene import through the model builder
+- Game-wide structural tests
+- Runtime status and assertion helpers
+- Script compile checks
+- Permission levels and backups
+- Console/output capture
+- Roblox Studio window screen capture
+- Long-polling for near real-time command delivery
+- Runtime version checks and update helpers
 
 ## Requirements
 
-- Node.js 20 or later
-- OpenCode
+- Node.js 20+
+- OpenCode or another MCP client
 - Roblox Studio
+- The OpenStudio Roblox Studio plugin
 
-## Install
-
-Global install:
-
-```powershell
-npm install -g openstudio
-```
-
-Then configure OpenCode to run either:
-- `openstudio` (Node entrypoint), or
-- `C:\path\to\OpenStudio\OpenStudio.bat` on Windows
-
-For Bloxstrap, launch Roblox Studio normally; OpenStudio detects any `*Studio*` process.
-
-Install the Studio plugin from `studio/OpenStudioPlugin.luau` using Roblox Studio's plugin workflow.
-
-Install dependencies and build:
+## Install and build
 
 ```powershell
-cd C:\Users\ianni\OpenStudio
+git clone https://github.com/5evenTeam/openstudio.git
+cd openstudio
 npm install
 npm run build
 ```
 
-## Start OpenCode MCP server through the launcher
+## OpenCode MCP configuration
 
-Configure OpenCode to launch the launcher (not `node` directly):
+Use the launcher so required checks run first:
 
 ```json
 {
   "mcp": {
     "openstudio": {
       "type": "local",
-      "command": "C:\\Users\\ianni\\OpenStudio\\scripts\\OpenStudio.bat",
+      "command": "C:\\OpenStudio\\scripts\\OpenStudio.bat",
       "args": []
     }
   }
 }
 ```
 
-OpenCode will start the `.bat`, which checks that:
+The launcher checks for Node.js, OpenCode, Roblox Studio, and port availability.
 
-- Node.js is available
-- OpenCode is running
-- Roblox Studio is running
-- Port `3777` is available
+For development, bypass checks:
 
-If all checks pass, it starts the Node bridge and keeps running.
+```powershell
+$env:OPENSTUDIO_SKIP_CHECKS = "1"
+npm start
+```
 
-To bypass checks for development, run with `OPENSTUDIO_SKIP_CHECKS=1`.
+## Studio plugin
 
-## Install the Studio plugin
+1. Open Roblox Studio.
+2. Create a plugin script from `studio/OpenStudioPlugin.luau`.
+3. Enable it.
+4. Run `openstudio_connect` from OpenCode.
 
-Open Roblox Studio, create a new plugin script, and paste in:
+The plugin long-polls the bridge and executes commands in Studio.
 
-`studio/OpenStudioPlugin.luau`
+## Permission levels
 
-Or install it as a local plugin using Studio's normal plugin workflow.
+- `read-only`: inspection only
+- `scripts-only`: scripts and read tools
+- `full-edit`: instances, UI, models, execution, and destructive ops
 
-## Token
+Default is controlled by `OPENSTUDIO_PERMISSIONS` (default `scripts-only`). Change at runtime:
 
-The bridge writes its token to:
+```text
+openstudio_set_permission_level(level: "read-only" | "scripts-only" | "full-edit")
+```
 
-`data/token.txt`
+## Scripts
 
-By default this is:
+- `openstudio_status`
+- `openstudio_connect`
+- `openstudio_list_scripts(root?)`
+- `openstudio_read_script(path)`
+- `openstudio_write_script(path, source)`
+- `openstudio_create_script(parentPath, name, scriptType, source)`
+- `openstudio_delete_script(path, confirm)`
 
-`openstudio-local-dev-token`
+## Instances
 
-Make sure the same token is configured in `studio/OpenStudioPlugin.luau` if you override `OPENSTUDIO_TOKEN`.
+- `openstudio_get_selection`
+- `openstudio_get_instance_tree(root?, depth?, maxNodes?)`
+- `openstudio_create_instance(parentPath, className, name, properties?)`
+- `openstudio_set_property(path, propertyName, valueType, value)`
+- `openstudio_rename_instance(path, newName)`
+- `openstudio_search_instances(root?, name?, className?, maxResults?, maxNodes?)`
+- `openstudio_inspect_instance(path)`
+- `openstudio_delete_instance(path, confirm)`
 
-## Use
+## UI generation (StudioUI)
 
-In OpenCode, available tools include:
+### Declarative node shape
 
-Current Phase 1 and Phase 2 tools:
+```json
+{
+  "name": "MyUI",
+  "className": "ScreenGui",
+  "properties": [
+    { "name": "ResetOnSpawn", "type": "boolean", "value": "false" }
+  ],
+  "children": [
+    {
+      "name": "Panel",
+      "className": "Frame",
+      "properties": [
+        { "name": "Size", "type": "UDim2", "value": "0,400,0,300" },
+        { "name": "Position", "type": "UDim2", "value": "0.5,0,0.5,0" }
+      ]
+    }
+  ]
+}
+```
 
-- Phase 1:
-  - `openstudio_connect`
-  - `openstudio_status`
-  - `openstudio_list_scripts`
-  - `openstudio_read_script`
-  - `openstudio_write_script`
-  - `openstudio_create_script`
-  - `openstudio_delete_script`
-- `openstudio_delete_instance`
-- `openstudio_rename_instance`
-- `openstudio_search_instances`
-- `openstudio_inspect_instance`
-- `openstudio_set_permission_level`
-- Phase 2:
-  - `openstudio_get_selection`
-  - `openstudio_get_instance_tree`
-  - `openstudio_create_instance`
-  - `openstudio_set_property`
-  - `openstudio_get_output`
-  - `openstudio_execute_lua`
-- Phase 3:
-  - `openstudio_delete_instance`
-  - `openstudio_set_permission_level`
-  - permission levels: `read-only`, `scripts-only`, `full-edit`
-  - confirmation gates for destructive operations
+Tools:
+- `openstudio_create_ui` (aliases: `openstudio_studio_ui`, `openstudio_import_ui`, `openstudio_build_ui`)
+- `openstudio_ui_panel`
+- `openstudio_ui_button`
+- `openstudio_ui_button_animated`
+- `openstudio_ui_toggle`
+- `openstudio_ui_tabbar`
+- `openstudio_ui_toast`
+- `openstudio_ui_card`
 
-Run `openstudio_connect` after Roblox Studio and the plugin are active.
+## Model generation
 
-## Safety
+`openstudio_model` accepts structured part descriptions or a Blender scene file/objects array.
 
-- Connections are local to `127.0.0.1`.
-- Destructive operations should be reviewed before use.
-- This is a development tool and is not hardened for untrusted environments.
+Primitive example:
 
-## Limitations
+```json
+{
+  "parentPath": "game.Workspace",
+  "modelName": "Blockout",
+  "objects": [
+    { "name": "Base", "shape": "block", "size": { "x": 20, "y": 1, "z": 20 }, "color": "0.3,0.3,0.3", "material": "Concrete" },
+    { "name": "Ball", "shape": "ball", "size": { "x": 2, "y": 2, "z": 2 }, "position": { "x": 0, "y": 4, "z": 0 }, "color": "0.9,0.3,0.3", "material": "Neon" }
+  ]
+}
+```
 
-- Play-mode control is not exposed by Roblox Studio plugins; use `openstudio_execute_lua` only for supported Studio/plugin operations. `openstudio_get_output` captures messages that the plugin's log connection forwards.
-- Studio-side HTTP access to localhost may be blocked depending on Studio settings. If the plugin cannot reach the bridge, use the file-polling fallback (not implemented yet).
-- Process detection in the `.bat` is Windows-specific and may need adjustment for different executable names.
-- Studio plugin networking requires HttpService to permit the local request.
+Blender example:
+
+```json
+{
+  "parentPath": "game.Workspace",
+  "modelName": "BlenderImport",
+  "filePath": "C:\\path\\to\\scene.json"
+}
+```
+
+## Testing and validation
+
+- `openstudio_test` / `openstudio_test_game`: compiles scripts and reports UI/structural issues.
+- `openstudio_runtime_status`: whether Studio is in run/play mode plus recent logs.
+- `openstudio_runtime_assert(code, confirm)`: run Luau checks in the plugin context.
+- `openstudio_get_output`: drain buffered Studio output logs.
+
+## Screen capture
+
+- `openstudio_capture_screen(outputPath?, windowTitle?, wholeScreen?)`
+- Captures the Roblox Studio window to PNG on Windows and returns the image inline.
+
+## Logs and safety
+
+- `openstudio_get_output`
+- `openstudio_cleanup_backups(path, keep?)`
+- Destructive operations require `confirm: true`.
+
+## Launcher
+
+`scripts/OpenStudio.bat` validates:
+- Node.js available
+- Port availability
+- Optionally OpenCode and Roblox Studio processes
+
+Development bypass:
+```powershell
+$env:OPENSTUDIO_SKIP_CHECKS = "1"
+```
+
+## Environment variables
+
+- `OPENSTUDIO_PORT`
+- `OPENSTUDIO_HOST`
+- `OPENSTUDIO_TOKEN`
+- `OPENSTUDIO_PERMISSIONS`
+- `OPENSTUDIO_STUDIO_TIMEOUT_MS`
+- `OPENSTUDIO_HEARTBEAT_STALE_MS`
+- `OPENSTUDIO_UPDATE_MANIFEST_URL`
+
+## Development
+
+```powershell
+npm run build
+npm run lint
+npm run test
+npm run dev
+```
+
+## Notes
+
+- Standard build target is `dist/index.js`.
+- Bridge listens on `127.0.0.1:3777` by default.
+- Studio plugin networking requires HttpService access to localhost.
+PY
