@@ -1418,6 +1418,46 @@ export function registerTools(server: McpServer, state: BridgeState): void {
     },
   );
 
+
+  server.tool(
+    "openstudio_ui_button_animated",
+    "Create a button with hover/press size animation.",
+    {
+      parentPath: z.string().optional(),
+      name: z.string().optional(),
+      text: z.string().optional(),
+      width: z.number().int().min(1).max(4096).optional(),
+      height: z.number().int().min(1).max(4096).optional(),
+    },
+    async (params: any) => {
+      if (!state.hasPermission("full-edit")) return permissionError("full-edit");
+      const node = {
+  name: params.name ?? "AnimatedButton",
+  className: "TextButton",
+  properties: [
+    { name: "Size", type: "UDim2", value: "0," + (params.width ?? 190) + ",0," + (params.height ?? 48) },
+    { name: "BackgroundColor3", type: "Color3", value: "0.24,0.5,0.98" },
+    { name: "Text", type: "string", value: params.text ?? "Button" },
+    { name: "TextColor3", type: "Color3", value: "1,1,1" },
+    { name: "TextScaled", type: "boolean", value: "true" },
+    { name: "BorderSizePixel", type: "number", value: "0" },
+    { name: "Font", type: "EnumItem", value: "Enum.Font.GothamBold" },
+  ],
+  children: [
+    { name: "UICorner", className: "UICorner", properties: [{ name: "CornerRadius", type: "UDim", value: "0,10" }] },
+    { name: "HoverAnimator", className: "LocalScript", properties: [
+      { name: "Source", type: "string", value: "local button = script.Parent\nlocal ts = game:GetService(\"TweenService\")\nlocal baseSize = button.Size\nlocal hoverTween = ts:Create(button, TweenInfo.new(0.12, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = baseSize + UDim2.fromOffset(6, 6)})\nlocal leaveTween = ts:Create(button, TweenInfo.new(0.12, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = baseSize})\nbutton.MouseEnter:Connect(function() hoverTween:Play() end)\nbutton.MouseLeave:Connect(function() leaveTween:Play() end)\n" },
+    ] },
+  ],
+};
+      const result = await sendStudioCommand(state, state.isStudioConnected.bind(state), HEARTBEAT_STALE_MS, "import_ui", {
+        parentPath: params.parentPath ?? "game.StarterGui",
+        node,
+      });
+      return okText(result);
+    },
+  );
+
 // Keep the previous version tool in sync with config.
   // (No-op here; openstudio_version already returns bridge metadata.)
 }
