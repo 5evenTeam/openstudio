@@ -855,6 +855,90 @@ export function registerTools(server: McpServer, state: BridgeState): void {
     },
   );
 
-  // Keep the previous version tool in sync with config.
+  
+  server.tool(
+    "openstudio_capture_screen",
+    "Capture a screenshot of the Roblox Studio window (Windows). Returns the PNG file path and an embedded image.",
+    {
+      outputPath: z.string().optional(),
+      windowTitle: z.string().optional(),
+      wholeScreen: z.boolean().optional(),
+    },
+    async ({ outputPath, windowTitle, wholeScreen }) => {
+      if (process.platform !== "win32") {
+        return okText({ ok: false, error: "Screen capture is currently supported on Windows only." });
+      }
+      try {
+        const screenshotDir = nodePath.join(runtimeDir(), "screenshots");
+        fs.mkdirSync(screenshotDir, { recursive: true });
+        const destination = outputPath
+          ? nodePath.resolve(outputPath)
+          : nodePath.join(screenshotDir, "studio-" + Date.now() + ".png");
+        const scriptPath = nodePath.join(screenshotDir, "capture.ps1");
+        const script = [
+          'param([string]$Destination, [string]$WindowTitle, [string]$WholeScreenFlag)',
+          'Add-Type -AssemblyName System.Windows.Forms, System.Drawing',
+          "Add-Type -TypeDefinition @'",
+          'using System;',
+          'using System.Runtime.InteropServices;',
+          'public class NativeWin {',
+          '  [StructLayout(LayoutKind.Sequential)] public struct RECT { public int Left,Top,Right,Bottom; }',
+          '  [DllImport("user32.dll")] public static extern bool GetWindowRect(IntPtr hWnd, out RECT rect);',
+          '}',
+          "'@",
+          'if ($WholeScreenFlag -eq "1") {',
+          '  $bounds = [System.Windows.Forms.Screen]::PrimaryScreen.Bounds',
+          '  $x = $bounds.X; $y = $bounds.Y; $w = $bounds.Width; $h = $bounds.Height',
+          '} else {',
+          '  $proc = $null',
+          '  try { $proc = Get-Process -Name "RobloxStudioBeta" -ErrorAction Stop | Select-Object -First 1 } catch { }',
+          '  if (-not $proc) { $proc = Get-Process | Where-Object { $_.MainWindowHandle -ne 0 -and $_.MainWindowTitle -like "*Studio*" } | Select-Object -First 1 }',
+          '  if (-not $proc) { throw "Roblox Studio window not found" }',
+          '  $r = New-Object NativeWin+RECT',
+          '  [NativeWin]::GetWindowRect($proc.MainWindowHandle, [ref]$r) | Out-Null',
+          '  $x = $r.Left; $y = $r.Top; $w = $r.Right - $r.Left; $h = $r.Bottom - $r.Top',
+          '  if ($w -le 0 -or $h -le 0) { throw "Studio window is not visible" }',
+          '}',
+          '$bmp = New-Object System.Drawing.Bitmap($w, $h)',
+          '$g = [System.Drawing.Graphics]::FromImage($bmp)',
+          '$g.CopyFromScreen($x, $y, 0, 0, $bmp.Size)',
+          '$bmp.Save($Destination, [System.Drawing.Imaging.ImageFormat]::Png)',
+          '$g.Dispose()',
+          '$bmp.Dispose()',
+        ].join("\\r\\n");
+        fs.writeFileSync(scriptPath, script, "utf8");
+        const { execFileSync } = await import("node:child_process");
+        execFileSync(
+          "powershell.exe",
+          [
+            "-NoProfile",
+            "-ExecutionPolicy",
+            "Bypass",
+            "-File",
+            scriptPath,
+            "-Destination",
+            destination,
+            "-WindowTitle",
+            windowTitle ?? "Roblox Studio",
+            "-WholeScreenFlag",
+            wholeScreen ? "1" : "0",
+          ],
+          { timeout: 20000, windowsHide: true },
+        );
+        const buffer = fs.readFileSync(destination);
+        const base64 = buffer.toString("base64");
+        return {
+          content: [
+            { type: "text" as const, text: JSON.stringify({ ok: true, path: destination, bytes: buffer.length }, null, 2) },
+            { type: "image" as const, data: base64, mimeType: "image/png" as const },
+          ],
+        };
+      } catch (error) {
+        return okText({ ok: false, error: error instanceof Error ? error.message : String(error) });
+      }
+    },
+  );
+
+// Keep the previous version tool in sync with config.
   // (No-op here; openstudio_version already returns bridge metadata.)
 }
