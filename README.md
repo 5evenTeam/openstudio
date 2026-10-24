@@ -137,6 +137,7 @@ Tools:
 - `openstudio_ui_toggle`
 - `openstudio_ui_tabbar`
 - `openstudio_ui_toast`
+- `openstudio_ui_tabs`
 - `openstudio_ui_card`
 
 ## Model generation
@@ -172,6 +173,8 @@ Blender example:
 - `openstudio_runtime_status`: whether Studio is in run/play mode plus recent logs.
 - `openstudio_runtime_assert(code, confirm)`: run Luau checks in the plugin context.
 - `openstudio_get_output`: drain buffered Studio output logs.
+- `openstudio_collect_diagnostics`
+- `openstudio_game_checkup`
 
 ## Screen capture
 
