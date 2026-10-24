@@ -4,13 +4,10 @@ import {
   BRIDGE_HOST,
   BRIDGE_PORT,
   BRIDGE_TOKEN,
-  STUDIO_TIMEOUT_MS,
   MAX_BODY_BYTES,
-  MAX_LONG_POLL_MS,
   MAX_COMMANDS_PER_REQUEST,
 } from "../config.js";
 import { BridgeState } from "./state.js";
-import { StudioCommand } from "./state.js";
 
 export interface BridgeHttpServer {
   listen(): void;
