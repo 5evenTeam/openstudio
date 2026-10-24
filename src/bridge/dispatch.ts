@@ -21,7 +21,11 @@ export function sendStudioCommand(
     createdAt: Date.now(),
   };
 
-  state.enqueue(command);
+  try {
+    state.enqueue(command);
+  } catch (error) {
+    return Promise.reject(error instanceof Error ? error : new Error(String(error)));
+  }
 
   return new Promise<StudioResult>((resolve, reject) => {
     const timer = setTimeout(() => {

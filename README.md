@@ -4,21 +4,23 @@ OpenStudio is a local bridge that lets OpenCode inspect and edit scripts in an o
 
 ## Current status
 
-This repository implements **Phase 1**:
+OpenStudio now implements a faster and broader bridge:
 
+- Near real-time command delivery through long polling (`/commands?wait=...`).
 - MCP tools for Roblox Studio script read/write/create/delete/list.
-- A localhost bridge used by the Studio plugin.
+- Instance tree inspection, creation, property writes, deletion, rename, search, and inspection.
+- Output-log capture and permission-level management at runtime.
+- A localhost bridge used by the Studio plugin with safer request handling and bounded queues.
 - A launcher `.bat` that validates required processes and runs the bridge.
-- A Roblox Studio plugin that polls the bridge and executes commands.
+- A Roblox Studio plugin that polls the bridge, long-polls for commands, and executes them.
 
-It is a **script-level** bridge. It does not yet perform arbitrary instance tree editing, property writes, playtest control, or output-log capture.
+It remains a development-focused bridge. Playtest control may still require Studio-side support.
 
 ## Requirements
 
 - Node.js 20 or later
 - OpenCode
 - Roblox Studio
-- A Roblox Studio plugin enabled for OpenStudio
 
 ## Install
 
@@ -105,6 +107,11 @@ Current Phase 1 and Phase 2 tools:
   - `openstudio_write_script`
   - `openstudio_create_script`
   - `openstudio_delete_script`
+- `openstudio_delete_instance`
+- `openstudio_rename_instance`
+- `openstudio_search_instances`
+- `openstudio_inspect_instance`
+- `openstudio_set_permission_level`
 - Phase 2:
   - `openstudio_get_selection`
   - `openstudio_get_instance_tree`

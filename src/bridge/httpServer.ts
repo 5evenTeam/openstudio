@@ -1,5 +1,14 @@
 import http from "node:http";
-import { BRIDGE_HOST, BRIDGE_PORT, BRIDGE_TOKEN, STUDIO_TIMEOUT_MS } from "../config.js";
+import crypto from "node:crypto";
+import {
+  BRIDGE_HOST,
+  BRIDGE_PORT,
+  BRIDGE_TOKEN,
+  STUDIO_TIMEOUT_MS,
+  MAX_BODY_BYTES,
+  MAX_LONG_POLL_MS,
+  MAX_COMMANDS_PER_REQUEST,
+} from "../config.js";
 import { BridgeState } from "./state.js";
 import { StudioCommand } from "./state.js";
 
@@ -8,11 +17,25 @@ export interface BridgeHttpServer {
   close(): void;
 }
 
+function safeEqualToken(received: unknown, expected: string): boolean {
+  const left = Buffer.from(String(received ?? ""), "utf8");
+  const right = Buffer.from(expected, "utf8");
+  if (left.length !== right.length) return false;
+  return crypto.timingSafeEqual(left, right);
+}
+
 function parseJson(req: http.IncomingMessage): Promise<any> {
   return new Promise((resolve, reject) => {
     let body = "";
+    let size = 0;
     req.setEncoding("utf8");
     req.on("data", (chunk) => {
+      size += Buffer.byteLength(chunk);
+      if (size > MAX_BODY_BYTES) {
+        reject(new Error("request body too large"));
+        req.destroy();
+        return;
+      }
       body += chunk;
     });
     req.on("end", () => {
@@ -43,13 +66,18 @@ function json(res: http.ServerResponse, status: number, body: unknown): void {
   res.end(JSON.stringify(body));
 }
 
+function notFound(res: http.ServerResponse): void {
+  json(res, 404, { ok: false, error: "not_found" });
+}
+
 export function createBridgeHttpServer(state: BridgeState): BridgeHttpServer {
   const server = http.createServer(async (req, res) => {
     try {
       const url = new URL(req.url ?? "/", `http://${BRIDGE_HOST}:${BRIDGE_PORT}`);
-      const token = req.headers["x-openstudio-token"] ?? url.searchParams.get("token");
+      const token =
+        req.headers["x-openstudio-token"] ?? url.searchParams.get("token");
 
-      if (token !== BRIDGE_TOKEN) {
+      if (!safeEqualToken(token, BRIDGE_TOKEN)) {
         unauthorized(res);
         return;
       }
@@ -66,8 +94,24 @@ export function createBridgeHttpServer(state: BridgeState): BridgeHttpServer {
       if (req.method === "GET" && url.pathname === "/health") {
         json(res, 200, {
           ok: true,
-          studioConnected: state.isStudioConnected(10_000),
+          version: "2",
+          bridge: "running",
+          studioConnected: state.isStudioConnected(),
+          connection: state.connection
+            ? {
+                clientId: state.connection.clientId,
+                version: state.connection.version,
+                capabilities: state.connection.capabilities ?? [],
+                lastHeartbeat: state.connection.lastHeartbeat,
+                gameName: state.connection.gameName,
+                gameId: state.connection.gameId,
+                placeId: state.connection.placeId,
+              }
+            : null,
           pendingCommands: state.pendingCount(),
+          queuedCommands: state.queueSize(),
+          logsBuffered: state.peekLogs().length,
+          permissionLevel: state.permissionLevel,
         });
         return;
       }
@@ -90,6 +134,7 @@ export function createBridgeHttpServer(state: BridgeState): BridgeHttpServer {
               timestamp: Number(entry.timestamp ?? Date.now()),
               message: String(entry.message ?? ""),
               messageType: entry.messageType ? String(entry.messageType) : undefined,
+              source: entry.source ? String(entry.source) : undefined,
             })),
           );
         }
@@ -98,7 +143,16 @@ export function createBridgeHttpServer(state: BridgeState): BridgeHttpServer {
       }
 
       if (req.method === "GET" && url.pathname === "/commands") {
-        const commands = state.dequeueAll();
+        const waitRaw = Number(url.searchParams.get("wait") ?? 0);
+        const wait = Number.isFinite(waitRaw) ? waitRaw : 0;
+        if (wait > 0) {
+          const commands = await state.waitForCommands(wait);
+          json(res, 200, { ok: true, commands });
+          return;
+        }
+        const limitRaw = Number(url.searchParams.get("limit") ?? MAX_COMMANDS_PER_REQUEST);
+        const limit = Number.isFinite(limitRaw) ? Math.max(1, Math.min(limitRaw, MAX_COMMANDS_PER_REQUEST)) : MAX_COMMANDS_PER_REQUEST;
+        const commands = state.dequeueAll(limit);
         json(res, 200, { ok: true, commands });
         return;
       }
@@ -116,7 +170,36 @@ export function createBridgeHttpServer(state: BridgeState): BridgeHttpServer {
         return;
       }
 
-      json(res, 404, { ok: false, error: "not_found" });
+      if (req.method === "POST" && url.pathname === "/results") {
+        const body = await parseJson(req);
+        const results = Array.isArray(body.results) ? body.results : Array.isArray(body) ? body : [];
+        const normalized = results.map((entry: any) => ({
+          id: String(entry.id),
+          ok: Boolean(entry.ok),
+          data: entry.data,
+          error: entry.error ? String(entry.error) : undefined,
+        }));
+        const accepted = state.resolvePendingMany(normalized);
+        json(res, 200, { ok: true, accepted, total: normalized.length });
+        return;
+      }
+
+      if (req.method === "POST" && url.pathname === "/log") {
+        const body = await parseJson(req);
+        const entries = Array.isArray(body.logs) ? body.logs : [body];
+        state.pushLogs(
+          entries.map((entry: any) => ({
+            timestamp: Number(entry.timestamp ?? Date.now()),
+            message: String(entry.message ?? ""),
+            messageType: entry.messageType ? String(entry.messageType) : undefined,
+            source: entry.source ? String(entry.source) : undefined,
+          })),
+        );
+        json(res, 200, { ok: true });
+        return;
+      }
+
+      notFound(res);
     } catch (error) {
       json(res, 500, {
         ok: false,
@@ -128,7 +211,6 @@ export function createBridgeHttpServer(state: BridgeState): BridgeHttpServer {
   return {
     listen(): void {
       server.listen(BRIDGE_PORT, BRIDGE_HOST, () => {
-        // eslint-disable-next-line no-console
         console.error(`[OpenStudio] bridge listening on http://${BRIDGE_HOST}:${BRIDGE_PORT}`);
       });
     },

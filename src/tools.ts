@@ -639,7 +639,7 @@ export function registerTools(server: McpServer, state: BridgeState): void {
     {},
     async () => {
       return okText({
-        bridgeVersion: "0.1.0",
+        bridgeVersion: BRIDGE_VERSION,
         permissionLevel: state.permissionLevel,
         studioConnected: state.isStudioConnected(10_000),
         studio: state.connection
@@ -722,6 +722,77 @@ export function registerTools(server: McpServer, state: BridgeState): void {
       return okText({ ok: false, error: error instanceof Error ? error.message : String(error) });
     }
   });
+
+  server.tool(
+    "openstudio_delete_instance",
+    "Delete an instance in Roblox Studio (destructive)",
+    { path: z.string().min(1), confirm: z.boolean().optional() },
+    async ({ path, confirm }) => {
+      if (!state.hasPermission("full-edit")) {
+        return permissionError("full-edit");
+      }
+      if (!confirm) {
+        return okText({ ok: false, error: "Pass confirm: true to delete an instance." });
+      }
+      const result = await sendStudioCommand(state, state.isStudioConnected.bind(state), HEARTBEAT_STALE_MS, "delete_instance", { path });
+      return okText(result);
+    },
+  );
+
+  server.tool(
+    "openstudio_rename_instance",
+    "Rename an instance in Roblox Studio",
+    { path: z.string().min(1), newName: z.string().min(1) },
+    async ({ path, newName }) => {
+      if (!state.hasPermission("full-edit")) {
+        return permissionError("full-edit");
+      }
+      const result = await sendStudioCommand(state, state.isStudioConnected.bind(state), HEARTBEAT_STALE_MS, "rename_instance", { path, newName });
+      return okText(result);
+    },
+  );
+
+  server.tool(
+    "openstudio_search_instances",
+    "Search instances by name and/or class name under a root",
+    {
+      root: z.string().optional(),
+      name: z.string().optional(),
+      className: z.string().optional(),
+      maxResults: z.number().int().min(1).max(1000).optional(),
+      maxNodes: z.number().int().min(1).max(5000).optional(),
+    },
+    async ({ root, name, className, maxResults, maxNodes }) => {
+      const result = await sendStudioCommand(state, state.isStudioConnected.bind(state), HEARTBEAT_STALE_MS, "search_instances", {
+        root: root ?? "game",
+        name: name ?? null,
+        className: className ?? null,
+        maxResults: maxResults ?? 100,
+        maxNodes: maxNodes ?? 5000,
+      });
+      return okText(result);
+    },
+  );
+
+  server.tool(
+    "openstudio_inspect_instance",
+    "Inspect an instance, returning its path, class, parent, children, and a best-effort property dump",
+    { path: z.string().min(1) },
+    async ({ path }) => {
+      const result = await sendStudioCommand(state, state.isStudioConnected.bind(state), HEARTBEAT_STALE_MS, "inspect_instance", { path });
+      return okText(result);
+    },
+  );
+
+  server.tool(
+    "openstudio_set_permission_level",
+    "Set bridge permission level at runtime",
+    { level: z.enum(["read-only", "scripts-only", "full-edit"]) },
+    async ({ level }) => {
+      const changed = state.setPermissionLevel(level);
+      return okText({ ok: changed, permissionLevel: state.permissionLevel });
+    },
+  );
 
   // Keep the previous version tool in sync with config.
   // (No-op here; openstudio_version already returns bridge metadata.)

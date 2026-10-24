@@ -1,6 +1,6 @@
 {
   "name": "openstudio",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "MCP bridge between OpenCode and Roblox Studio",
   "license": "MIT",
   "type": "module",
@@ -30,7 +30,7 @@
     "dev": "tsc --watch",
     "start": "node dist/index.js",
     "clean": "rimraf dist",
-    "test": "npm run build && node --test tests/*.mjs",
+    "test": "npm run build && node --test --test-concurrency=1 tests/*.mjs",
     "update": "npm install && npm run build"
   },
   "dependencies": {

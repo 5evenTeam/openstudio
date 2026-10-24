@@ -47,7 +47,7 @@ local function heartbeat()
     local logsToSend = pendingLogs
     pendingLogs = {}
     return request("POST", "/heartbeat", {
-        version = "0.1.1",
+        version = "0.2.0",
         capabilities = {
             "list_scripts",
             "read_script",
@@ -62,6 +62,9 @@ local function heartbeat()
             "import_figma",
             "import_blender",
             "execute_lua",
+            "rename_instance",
+            "search_instances",
+            "inspect_instance",
         },
         gameName = game.Name,
         gameId = game.GameId,
@@ -481,6 +484,76 @@ local function executeCommand(command)
         end
 
         return true, { root = getPathString(model), created = createdCount }
+    elseif command.type == "rename_instance" then
+        local target, err = resolvePath(command.payload.path)
+        if not target then
+            return false, err
+        end
+        target.Name = tostring(command.payload.newName)
+        return true, { path = getPathString(target), renamed = true }
+
+    elseif command.type == "search_instances" then
+        local root, err = resolvePath(command.payload.root)
+        if not root then
+            return false, err
+        end
+        local targetName = command.payload.name
+        local targetClass = command.payload.className
+        local maxResults = tonumber(command.payload.maxResults) or 100
+        local maxNodes = tonumber(command.payload.maxNodes) or 5000
+        local results = {}
+        local visited = 0
+        local function visit(instance)
+            if visited >= maxNodes or #results >= maxResults then
+                return
+            end
+            visited = visited + 1
+            local hasNameFilter = targetName ~= nil and tostring(targetName) ~= ""
+        local hasClassFilter = targetClass ~= nil and tostring(targetClass) ~= ""
+        local nameMatch = (not hasNameFilter) or string.find(string.lower(instance.Name), string.lower(tostring(targetName)), 1, true) ~= nil
+        local classMatch = (not hasClassFilter) or instance.ClassName == tostring(targetClass)
+        if nameMatch and classMatch then
+                table.insert(results, {
+                    path = getPathString(instance),
+                    name = instance.Name,
+                    className = instance.ClassName,
+                })
+            end
+            for _, child in ipairs(instance:GetChildren()) do
+                visit(child)
+                if #results >= maxResults then
+                    return
+                end
+            end
+        end
+        visit(root)
+        return true, { root = getPathString(root), results = results, count = #results, visited = visited }
+
+    elseif command.type == "inspect_instance" then
+        local target, err = resolvePath(command.payload.path)
+        if not target then
+            return false, err
+        end
+        local children = {}
+        for _, child in ipairs(target:GetChildren()) do
+            table.insert(children, {
+                path = getPathString(child),
+                name = child.Name,
+                className = child.ClassName,
+            })
+        end
+        local parentPath = nil
+        if target.Parent then
+            parentPath = getPathString(target.Parent)
+        end
+        return true, {
+            path = getPathString(target),
+            name = target.Name,
+            className = target.ClassName,
+            parent = parentPath,
+            children = children,
+            childCount = #children,
+        }
     elseif command.type == "execute_lua" then
         local fn, compileError = loadstring(command.payload.code)
         if not fn then
@@ -507,11 +580,11 @@ local running = true
 
 local function pollLoop()
     while running do
-local heartbeatOk = heartbeat()
+        local heartbeatOk = heartbeat()
         if toolbarButton then
             toolbarButton.Text = heartbeatOk and "OpenStudio Connected" or "OpenStudio Disconnected"
         end
-        local ok, result = request("GET", "/commands?token=" .. TOKEN)
+        local ok, result = request("GET", "/commands?token=" .. TOKEN .. "&wait=5000")
         if ok and result and result.commands then
             for _, command in ipairs(result.commands) do
                 local success, dataOrError = executeCommand(command)
@@ -522,8 +595,12 @@ local heartbeatOk = heartbeat()
                     error = (not success) and tostring(dataOrError) or nil,
                 })
             end
+        else
+            task.wait(0.25)
         end
-        task.wait(1)
+        if not ok then
+            task.wait(1)
+        end
     end
 end
 
