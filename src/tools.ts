@@ -1462,15 +1462,36 @@ export function registerTools(server: McpServer, state: BridgeState): void {
   server.tool(
     "openstudio_model",
     "Generate a 3D model/part assembly in Studio from a structured object description.",
-    { parentPath: z.string().optional(), modelName: z.string().optional(), scale: z.number().optional(), objects: z.array(z.any()).min(1) },
-    async ({ parentPath, modelName, scale, objects }) => {
+    { parentPath: z.string().optional(), modelName: z.string().optional(), scale: z.number().optional(), objects: z.array(z.any()).optional(), filePath: z.string().optional(), scene: z.any().optional() },
+    async ({ parentPath, modelName, scale, objects, filePath, scene }) => {
       if (!state.hasPermission("full-edit")) return permissionError("full-edit");
+      let resolvedObjects = objects;
+      let resolvedScale = scale ?? 1;
+      if (filePath || scene) {
+        if (filePath && !fs.existsSync(filePath)) {
+          return okText({ ok: false, error: "Blender scene file not found." });
+        }
+        let resolvedScene = scene;
+        if (filePath) {
+          try { resolvedScene = JSON.parse(fs.readFileSync(filePath, "utf8")); } catch (error) {
+            return okText({ ok: false, error: "Invalid JSON in Blender scene file." });
+          }
+        }
+        if (!resolvedScene || !Array.isArray(resolvedScene.objects)) {
+          return okText({ ok: false, error: "Scene must contain an objects array." });
+        }
+        resolvedObjects = resolvedScene.objects;
+        resolvedScale = scale ?? resolvedScene.scale ?? 1;
+      }
+      if (!Array.isArray(resolvedObjects) || resolvedObjects.length === 0) {
+        return okText({ ok: false, error: "A non-empty objects array (or filePath/scene) is required." });
+      }
       const result = await sendStudioCommand(state, state.isStudioConnected.bind(state), HEARTBEAT_STALE_MS, "import_model", {
         parentPath: parentPath ?? "game.Workspace",
         modelName: modelName ?? "GeneratedModel",
-        scale: scale ?? 1,
-        objects,
-      });
+        scale: resolvedScale,
+        objects: resolvedObjects,
+      })
       return okText(result);
     },
   );
@@ -1479,15 +1500,36 @@ export function registerTools(server: McpServer, state: BridgeState): void {
   server.tool(
     "openstudio_generate_model",
     "Generate a 3D model/part assembly in Studio from a structured object description.",
-    { parentPath: z.string().optional(), modelName: z.string().optional(), scale: z.number().optional(), objects: z.array(z.any()).min(1) },
-    async ({ parentPath, modelName, scale, objects }) => {
+    { parentPath: z.string().optional(), modelName: z.string().optional(), scale: z.number().optional(), objects: z.array(z.any()).optional(), filePath: z.string().optional(), scene: z.any().optional() },
+    async ({ parentPath, modelName, scale, objects, filePath, scene }) => {
       if (!state.hasPermission("full-edit")) return permissionError("full-edit");
+      let resolvedObjects = objects;
+      let resolvedScale = scale ?? 1;
+      if (filePath || scene) {
+        if (filePath && !fs.existsSync(filePath)) {
+          return okText({ ok: false, error: "Blender scene file not found." });
+        }
+        let resolvedScene = scene;
+        if (filePath) {
+          try { resolvedScene = JSON.parse(fs.readFileSync(filePath, "utf8")); } catch (error) {
+            return okText({ ok: false, error: "Invalid JSON in Blender scene file." });
+          }
+        }
+        if (!resolvedScene || !Array.isArray(resolvedScene.objects)) {
+          return okText({ ok: false, error: "Scene must contain an objects array." });
+        }
+        resolvedObjects = resolvedScene.objects;
+        resolvedScale = scale ?? resolvedScene.scale ?? 1;
+      }
+      if (!Array.isArray(resolvedObjects) || resolvedObjects.length === 0) {
+        return okText({ ok: false, error: "A non-empty objects array (or filePath/scene) is required." });
+      }
       const result = await sendStudioCommand(state, state.isStudioConnected.bind(state), HEARTBEAT_STALE_MS, "import_model", {
         parentPath: parentPath ?? "game.Workspace",
         modelName: modelName ?? "GeneratedModel",
-        scale: scale ?? 1,
-        objects,
-      });
+        scale: resolvedScale,
+        objects: resolvedObjects,
+      })
       return okText(result);
     },
   );
@@ -1496,15 +1538,36 @@ export function registerTools(server: McpServer, state: BridgeState): void {
   server.tool(
     "openstudio_build_model",
     "Generate a 3D model/part assembly in Studio from a structured object description.",
-    { parentPath: z.string().optional(), modelName: z.string().optional(), scale: z.number().optional(), objects: z.array(z.any()).min(1) },
-    async ({ parentPath, modelName, scale, objects }) => {
+    { parentPath: z.string().optional(), modelName: z.string().optional(), scale: z.number().optional(), objects: z.array(z.any()).optional(), filePath: z.string().optional(), scene: z.any().optional() },
+    async ({ parentPath, modelName, scale, objects, filePath, scene }) => {
       if (!state.hasPermission("full-edit")) return permissionError("full-edit");
+      let resolvedObjects = objects;
+      let resolvedScale = scale ?? 1;
+      if (filePath || scene) {
+        if (filePath && !fs.existsSync(filePath)) {
+          return okText({ ok: false, error: "Blender scene file not found." });
+        }
+        let resolvedScene = scene;
+        if (filePath) {
+          try { resolvedScene = JSON.parse(fs.readFileSync(filePath, "utf8")); } catch (error) {
+            return okText({ ok: false, error: "Invalid JSON in Blender scene file." });
+          }
+        }
+        if (!resolvedScene || !Array.isArray(resolvedScene.objects)) {
+          return okText({ ok: false, error: "Scene must contain an objects array." });
+        }
+        resolvedObjects = resolvedScene.objects;
+        resolvedScale = scale ?? resolvedScene.scale ?? 1;
+      }
+      if (!Array.isArray(resolvedObjects) || resolvedObjects.length === 0) {
+        return okText({ ok: false, error: "A non-empty objects array (or filePath/scene) is required." });
+      }
       const result = await sendStudioCommand(state, state.isStudioConnected.bind(state), HEARTBEAT_STALE_MS, "import_model", {
         parentPath: parentPath ?? "game.Workspace",
         modelName: modelName ?? "GeneratedModel",
-        scale: scale ?? 1,
-        objects,
-      });
+        scale: resolvedScale,
+        objects: resolvedObjects,
+      })
       return okText(result);
     },
   );
