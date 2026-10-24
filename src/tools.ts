@@ -1667,6 +1667,140 @@ export function registerTools(server: McpServer, state: BridgeState): void {
     },
   );
 
+
+  server.tool(
+    "openstudio_ui_tabs",
+    "Create a tabbed UI with clickable tabs and swappable content panels.",
+    {
+      parentPath: z.string().optional(),
+      name: z.string().optional(),
+      tabs: z.array(z.string()).min(1).max(12),
+      width: z.number().int().min(1).max(4096).optional(),
+      height: z.number().int().min(1).max(4096).optional(),
+    },
+    async (params: any) => {
+      if (!state.hasPermission("full-edit")) return permissionError("full-edit");
+      const labels = params.tabs;
+      const tabNames = labels.map((_: string, i: number) => "Tab" + (i + 1));
+      const panelNames = labels.map((_: string, i: number) => "Panel" + (i + 1));
+      const w = params.width ?? 420;
+      const h = params.height ?? 280;
+      const tabButtons = labels.map((label: string, i: number) => ({
+        name: tabNames[i],
+        className: "TextButton",
+        properties: [
+          { name: "Size", type: "UDim2", value: "0,0,1,0" },
+          { name: "AutomaticSize", type: "EnumItem", value: "Enum.AutomaticSize.X" },
+          { name: "BackgroundColor3", type: "Color3", value: i === 0 ? "0.28,0.55,0.98" : "0.2,0.2,0.22" },
+          { name: "Text", type: "string", value: label },
+          { name: "TextColor3", type: "Color3", value: "1,1,1" },
+          { name: "TextScaled", type: "boolean", value: "true" },
+          { name: "BorderSizePixel", type: "number", value: "0" },
+        ],
+        children: [{ name: "UICorner", className: "UICorner", properties: [{ name: "CornerRadius", type: "UDim", value: "0,8" }] }],
+      }));
+      const panels = labels.map((label: string, i: number) => ({
+        name: panelNames[i],
+        className: "Frame",
+        properties: [
+          { name: "Size", type: "UDim2", value: "1,0,1,-48" },
+          { name: "Position", type: "UDim2", value: "0,0,0,48" },
+          { name: "BackgroundColor3", type: "Color3", value: "0.14,0.14,0.16" },
+          { name: "Visible", type: "boolean", value: i === 0 ? "true" : "false" },
+          { name: "BorderSizePixel", type: "number", value: "0" },
+        ],
+        children: [
+          { name: "UICorner", className: "UICorner", properties: [{ name: "CornerRadius", type: "UDim", value: "0,12" }] },
+          { name: "Title", className: "TextLabel", properties: [
+            { name: "Size", type: "UDim2", value: "1,-20,0,34" },
+            { name: "Position", type: "UDim2", value: "0,10,0,10" },
+            { name: "BackgroundTransparency", type: "number", value: "1" },
+            { name: "Text", type: "string", value: label },
+            { name: "TextColor3", type: "Color3", value: "1,1,1" },
+            { name: "TextXAlignment", type: "EnumItem", value: "Enum.TextXAlignment.Left" },
+            { name: "TextScaled", type: "boolean", value: "true" },
+          ] },
+        ],
+      }));
+      const tabsJson = JSON.stringify(tabNames);
+      const panelsJson = JSON.stringify(panelNames);
+      const script = [
+        "local container = script.Parent",
+        'local tabBar = container:WaitForChild("TabBar")',
+        'local content = container:WaitForChild("Content")',
+        "local tabNames = " + tabsJson,
+        "local panelNames = " + panelsJson,
+        "local tabs = {}",
+        "local panels = {}",
+        "for _, name in ipairs(tabNames) do tabs[name] = tabBar:WaitForChild(name) end",
+        "for _, name in ipairs(panelNames) do panels[name] = content:WaitForChild(name) end",
+        "local function select(i)",
+        "  for n = 1, #tabNames do",
+        "    tabs[tabNames[n]].BackgroundColor3 = (n == i) and Color3.fromRGB(72,140,250) or Color3.fromRGB(52,52,56)",
+        "    panels[panelNames[n]].Visible = (n == i)",
+        "  end",
+        "end",
+        "for n = 1, #tabNames do",
+        "  local i = n",
+        "  tabs[tabNames[n]].MouseButton1Click:Connect(function() select(i) end)",
+        "end",
+        "select(1)",
+      ].join("\n");
+      const node = {
+        name: params.name ?? "Tabs",
+        className: "Frame",
+        properties: [
+          { name: "Size", type: "UDim2", value: "0," + w + ",0," + h },
+          { name: "BackgroundColor3", type: "Color3", value: "0.12,0.12,0.14" },
+          { name: "BorderSizePixel", type: "number", value: "0" },
+        ],
+        children: [
+          {
+            name: "TabBar",
+            className: "Frame",
+            properties: [
+              { name: "Size", type: "UDim2", value: "1,0,0,44" },
+              { name: "BackgroundTransparency", type: "number", value: "1" },
+            ],
+            children: [
+              { name: "UIListLayout", className: "UIListLayout", properties: [
+                { name: "FillDirection", type: "EnumItem", value: "Enum.FillDirection.Horizontal" },
+                { name: "Padding", type: "UDim", value: "0,6" },
+                { name: "SortOrder", type: "EnumItem", value: "Enum.SortOrder.LayoutOrder" },
+              ] },
+              { name: "UIPadding", className: "UIPadding", properties: [
+                { name: "PaddingLeft", type: "UDim", value: "0,8" },
+                { name: "PaddingTop", type: "UDim", value: "0,6" },
+              ] },
+              ...tabButtons,
+            ],
+          },
+          {
+            name: "Content",
+            className: "Frame",
+            properties: [
+              { name: "Size", type: "UDim2", value: "1,0,1,-44" },
+              { name: "Position", type: "UDim2", value: "0,0,0,44" },
+              { name: "BackgroundTransparency", type: "number", value: "1" },
+            ],
+            children: panels,
+          },
+          {
+            name: "TabController",
+            className: "LocalScript",
+            properties: [{ name: "Source", type: "string", value: script }],
+          },
+        ],
+      };
+      const result = await sendStudioCommand(state, state.isStudioConnected.bind(state), HEARTBEAT_STALE_MS, "import_ui", {
+        parentPath: params.parentPath ?? "game.StarterGui",
+        node,
+      });
+      return okText(result);
+    },
+  );
+
 // Keep the previous version tool in sync with config.
   // (No-op here; openstudio_version already returns bridge metadata.)
 }
+
