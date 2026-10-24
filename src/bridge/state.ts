@@ -21,6 +21,7 @@ export type StudioCommandType =
   | "rename_instance"
   | "search_instances"
   | "inspect_instance"
+  | "import_model"
   | "test_game"
   | "import_ui"
   | "import_blender"

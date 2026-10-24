@@ -1458,6 +1458,57 @@ export function registerTools(server: McpServer, state: BridgeState): void {
     },
   );
 
+
+  server.tool(
+    "openstudio_model",
+    "Generate a 3D model/part assembly in Studio from a structured object description.",
+    { parentPath: z.string().optional(), modelName: z.string().optional(), scale: z.number().optional(), objects: z.array(z.any()).min(1) },
+    async ({ parentPath, modelName, scale, objects }) => {
+      if (!state.hasPermission("full-edit")) return permissionError("full-edit");
+      const result = await sendStudioCommand(state, state.isStudioConnected.bind(state), HEARTBEAT_STALE_MS, "import_model", {
+        parentPath: parentPath ?? "game.Workspace",
+        modelName: modelName ?? "GeneratedModel",
+        scale: scale ?? 1,
+        objects,
+      });
+      return okText(result);
+    },
+  );
+
+
+  server.tool(
+    "openstudio_generate_model",
+    "Generate a 3D model/part assembly in Studio from a structured object description.",
+    { parentPath: z.string().optional(), modelName: z.string().optional(), scale: z.number().optional(), objects: z.array(z.any()).min(1) },
+    async ({ parentPath, modelName, scale, objects }) => {
+      if (!state.hasPermission("full-edit")) return permissionError("full-edit");
+      const result = await sendStudioCommand(state, state.isStudioConnected.bind(state), HEARTBEAT_STALE_MS, "import_model", {
+        parentPath: parentPath ?? "game.Workspace",
+        modelName: modelName ?? "GeneratedModel",
+        scale: scale ?? 1,
+        objects,
+      });
+      return okText(result);
+    },
+  );
+
+
+  server.tool(
+    "openstudio_build_model",
+    "Generate a 3D model/part assembly in Studio from a structured object description.",
+    { parentPath: z.string().optional(), modelName: z.string().optional(), scale: z.number().optional(), objects: z.array(z.any()).min(1) },
+    async ({ parentPath, modelName, scale, objects }) => {
+      if (!state.hasPermission("full-edit")) return permissionError("full-edit");
+      const result = await sendStudioCommand(state, state.isStudioConnected.bind(state), HEARTBEAT_STALE_MS, "import_model", {
+        parentPath: parentPath ?? "game.Workspace",
+        modelName: modelName ?? "GeneratedModel",
+        scale: scale ?? 1,
+        objects,
+      });
+      return okText(result);
+    },
+  );
+
 // Keep the previous version tool in sync with config.
   // (No-op here; openstudio_version already returns bridge metadata.)
 }

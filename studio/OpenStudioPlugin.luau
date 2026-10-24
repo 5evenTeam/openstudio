@@ -479,6 +479,93 @@ local function executeCommand(command)
             uiIssues = uiIssues,
             classCounts = classCounts,
         }
+    elseif command.type == "import_model" then
+        local parent, err = resolvePath(command.payload.parentPath)
+        if not parent then
+            return false, err
+        end
+        local scale = tonumber(command.payload.scale) or 1
+        local model = Instance.new("Model")
+        model.Name = tostring(command.payload.modelName or "GeneratedModel")
+        model.Parent = parent
+        local objectMap = {}
+        local createdCount = 0
+        local objects = command.payload.objects or {}
+        for _, objectDefinition in ipairs(objects) do
+            local shape = tostring(objectDefinition.shape or objectDefinition.type or "block")
+            local part = nil
+            if shape == "ball" or shape == "sphere" then
+                part = Instance.new("Part")
+                part.Shape = Enum.PartType.Ball
+            elseif shape == "cylinder" then
+                part = Instance.new("Part")
+                part.Shape = Enum.PartType.Cylinder
+            elseif shape == "wedge" then
+                part = Instance.new("WedgePart")
+            elseif shape == "cornerwedge" then
+                part = Instance.new("CornerWedgePart")
+            else
+                part = Instance.new("Part")
+                part.Shape = Enum.PartType.Block
+            end
+            part.Name = tostring(objectDefinition.name or "ModelPart")
+            local rawSize = objectDefinition.size or { x = 1, y = 1, z = 1 }
+            part.Size = Vector3.new(
+                (tonumber(rawSize.x) or 1) * scale,
+                (tonumber(rawSize.y) or 1) * scale,
+                (tonumber(rawSize.z) or 1) * scale
+            )
+            local rawPosition = objectDefinition.position or { x = 0, y = 0, z = 0 }
+            local px = (tonumber(rawPosition.x) or 0) * scale
+            local py = (tonumber(rawPosition.y) or 0) * scale
+            local pz = (tonumber(rawPosition.z) or 0) * scale
+            if type(objectDefinition.rotation) == "table" and #objectDefinition.rotation >= 3 then
+                local r = objectDefinition.rotation
+                part.CFrame = CFrame.new(px,py,pz) * CFrame.Angles(
+                    math.rad(tonumber(r[1]) or 0),
+                    math.rad(tonumber(r[2]) or 0),
+                    math.rad(tonumber(r[3]) or 0)
+                )
+            else
+                part.Position = Vector3.new(px, py, pz)
+            end
+            if type(objectDefinition.color) == "table" then
+                part.Color = Color3.new(
+                    tonumber(objectDefinition.color[1]) or 1,
+                    tonumber(objectDefinition.color[2]) or 1,
+                    tonumber(objectDefinition.color[3]) or 1
+                )
+            elseif type(objectDefinition.color) == "string" then
+                local r,g,b = tostring(objectDefinition.color):match("([^,]+),([^,]+),([^,]+)")
+                if r then part.Color = Color3.new(tonumber(r) or 1, tonumber(g) or 1, tonumber(b) or 1) end
+            end
+            local materialName = objectDefinition.material
+            if type(materialName) == "string" then
+                local materialOk, materialValue = pcall(function()
+                    return loadstring("return Enum.Material." .. materialName)()
+                end)
+                if materialOk and typeof(materialValue) == "EnumItem" then
+                    part.Material = materialValue
+                end
+            end
+            if objectDefinition.transparency ~= nil then
+                part.Transparency = tonumber(objectDefinition.transparency) or 0
+            end
+            if objectDefinition.anchored ~= false then
+                part.Anchored = true
+            end
+            part.Parent = model
+            objectMap[part.Name] = part
+            createdCount = createdCount + 1
+        end
+
+        for _, objectDefinition in ipairs(objects) do
+            if objectDefinition.parent and objectMap[objectDefinition.name] and objectMap[objectDefinition.parent] then
+                objectMap[objectDefinition.name].Parent = objectMap[objectDefinition.parent]
+            end
+        end
+
+        return true, { root = getPathString(model), created = createdCount }
     elseif command.type == "import_blender" then
         local parent, err = resolvePath(command.payload.parentPath)
         if not parent then
