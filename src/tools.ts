@@ -11,6 +11,33 @@ export function registerTools(server: McpServer, state: BridgeState): void {
     content: [{ type: "text" as const, text: JSON.stringify(value, null, 2) }],
   });
 
+  const uiNodeSchema: z.ZodType<any> = z.lazy(() =>
+    z.object({
+      name: z.string().min(1).optional(),
+      className: z.string().min(1),
+      class: z.string().min(1).optional(),
+      properties: z
+        .array(z.object({ name: z.string().min(1), type: z.string().min(1), value: z.string() }))
+        .optional(),
+      props: z.record(z.union([z.string(), z.number(), z.boolean()])).optional(),
+      children: z.array(z.lazy(() => uiNodeSchema)).optional().default([]),
+    }),
+  );
+
+  const modelObjectSchema = z.object({
+    name: z.string().optional(),
+    shape: z.string().optional(),
+    type: z.string().optional(),
+    size: z.object({ x: z.number().optional(), y: z.number().optional(), z: z.number().optional() }).optional(),
+    position: z.object({ x: z.number().optional(), y: z.number().optional(), z: z.number().optional() }).optional(),
+    rotation: z.array(z.number()).optional(),
+    color: z.union([z.string(), z.array(z.number())]).optional(),
+    material: z.string().optional(),
+    transparency: z.number().optional(),
+    anchored: z.boolean().optional(),
+    parent: z.string().optional(),
+  }).passthrough();
+
   const permissionError = (required: string) => okText({
     ok: false,
     error: `This operation requires ${required} permission (current: ${state.permissionLevel}).`,
@@ -762,7 +789,7 @@ export function registerTools(server: McpServer, state: BridgeState): void {
     "Build Roblox UI in Studio from a node tree (StudioUI). The node may contain className/name, properties (array of {name,type,value}), props (simple object), and children.",
     {
       parentPath: z.string().optional(),
-      node: z.any(),
+      node: uiNodeSchema,
     },
     async ({ parentPath, node }) => {
       if (!state.hasPermission("full-edit")) {
@@ -785,7 +812,7 @@ export function registerTools(server: McpServer, state: BridgeState): void {
     "Build Roblox UI in Studio from a node tree (StudioUI). The node may contain className/name, properties (array of {name,type,value}), props (simple object), and children.",
     {
       parentPath: z.string().optional(),
-      node: z.any(),
+      node: uiNodeSchema,
     },
     async ({ parentPath, node }) => {
       if (!state.hasPermission("full-edit")) {
@@ -808,7 +835,7 @@ export function registerTools(server: McpServer, state: BridgeState): void {
     "Build Roblox UI in Studio from a node tree (StudioUI). The node may contain className/name, properties (array of {name,type,value}), props (simple object), and children.",
     {
       parentPath: z.string().optional(),
-      node: z.any(),
+      node: uiNodeSchema,
     },
     async ({ parentPath, node }) => {
       if (!state.hasPermission("full-edit")) {
@@ -831,7 +858,7 @@ export function registerTools(server: McpServer, state: BridgeState): void {
     "Build Roblox UI in Studio from a node tree (StudioUI). The node may contain className/name, properties (array of {name,type,value}), props (simple object), and children.",
     {
       parentPath: z.string().optional(),
-      node: z.any(),
+      node: uiNodeSchema,
     },
     async ({ parentPath, node }) => {
       if (!state.hasPermission("full-edit")) {
@@ -1462,7 +1489,7 @@ export function registerTools(server: McpServer, state: BridgeState): void {
   server.tool(
     "openstudio_model",
     "Generate a 3D model/part assembly in Studio from a structured object description.",
-    { parentPath: z.string().optional(), modelName: z.string().optional(), scale: z.number().optional(), objects: z.array(z.any()).optional(), filePath: z.string().optional(), scene: z.any().optional() },
+    { parentPath: z.string().optional(), modelName: z.string().optional(), scale: z.number().optional(), objects: z.array(modelObjectSchema).optional(), filePath: z.string().optional(), scene: z.any().optional() },
     async ({ parentPath, modelName, scale, objects, filePath, scene }) => {
       if (!state.hasPermission("full-edit")) return permissionError("full-edit");
       let resolvedObjects = objects;
@@ -1500,7 +1527,7 @@ export function registerTools(server: McpServer, state: BridgeState): void {
   server.tool(
     "openstudio_generate_model",
     "Generate a 3D model/part assembly in Studio from a structured object description.",
-    { parentPath: z.string().optional(), modelName: z.string().optional(), scale: z.number().optional(), objects: z.array(z.any()).optional(), filePath: z.string().optional(), scene: z.any().optional() },
+    { parentPath: z.string().optional(), modelName: z.string().optional(), scale: z.number().optional(), objects: z.array(modelObjectSchema).optional(), filePath: z.string().optional(), scene: z.any().optional() },
     async ({ parentPath, modelName, scale, objects, filePath, scene }) => {
       if (!state.hasPermission("full-edit")) return permissionError("full-edit");
       let resolvedObjects = objects;
@@ -1538,7 +1565,7 @@ export function registerTools(server: McpServer, state: BridgeState): void {
   server.tool(
     "openstudio_build_model",
     "Generate a 3D model/part assembly in Studio from a structured object description.",
-    { parentPath: z.string().optional(), modelName: z.string().optional(), scale: z.number().optional(), objects: z.array(z.any()).optional(), filePath: z.string().optional(), scene: z.any().optional() },
+    { parentPath: z.string().optional(), modelName: z.string().optional(), scale: z.number().optional(), objects: z.array(modelObjectSchema).optional(), filePath: z.string().optional(), scene: z.any().optional() },
     async ({ parentPath, modelName, scale, objects, filePath, scene }) => {
       if (!state.hasPermission("full-edit")) return permissionError("full-edit");
       let resolvedObjects = objects;
