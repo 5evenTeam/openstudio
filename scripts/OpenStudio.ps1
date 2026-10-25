@@ -5,7 +5,7 @@ $dist = Join-Path $root "dist\index.js"
 
 function Add-NodeToPath {
   foreach ($candidate in @("C:\Program Files\nodejs", "C:\Program Files (x86)\nodejs")) {
-    if (Test-Path (Join-Path $candidate "node.exe") -and -not ($env:Path -split ';' | Where-Object { $_ -eq $candidate })) {
+    if ((Test-Path (Join-Path $candidate "node.exe")) -and -not ($env:Path -split ';' | Where-Object { $_ -eq $candidate })) {
       $env:Path = "$candidate;$env:Path"
     }
   }
@@ -98,4 +98,5 @@ if ($env:OPENSTUDIO_SKIP_CHECKS -ne "1") {
 Write-Host "[OpenStudio] Starting bridge..."
 & node $dist @args
 exit $LASTEXITCODE
+
 
