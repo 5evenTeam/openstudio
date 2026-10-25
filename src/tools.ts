@@ -1800,6 +1800,87 @@ export function registerTools(server: McpServer, state: BridgeState): void {
     },
   );
 
+
+  server.tool(
+    "openstudio_ui_modal",
+    "Create an animated modal with overlay and close button.",
+    {
+      parentPath: z.string().optional(),
+      name: z.string().optional(),
+      title: z.string().optional(),
+      width: z.number().int().min(1).max(4096).optional(),
+      height: z.number().int().min(1).max(4096).optional(),
+      dimBackground: z.boolean().optional(),
+    },
+    async (params: any) => {
+      if (!state.hasPermission("full-edit")) return permissionError("full-edit");
+      const node = {
+        name: params.name ?? "Modal",
+        className: "ScreenGui",
+        properties: [{ name: "ResetOnSpawn", type: "boolean", value: "false" }],
+        children: [
+          {
+            name: "Overlay",
+            className: "Frame",
+            properties: [
+              { name: "Size", type: "UDim2", value: "1,0,1,0" },
+              { name: "BackgroundColor3", type: "Color3", value: "0,0,0" },
+              { name: "BackgroundTransparency", type: "number", value: params.dimBackground === false ? "1" : "0.5" },
+              { name: "BorderSizePixel", type: "number", value: "0" },
+              { name: "ZIndex", type: "number", value: "0" },
+            ],
+          },
+          {
+            name: "Panel",
+            className: "Frame",
+            properties: [
+              { name: "Size", type: "UDim2", value: "0," + (params.width ?? 420) + ",0," + (params.height ?? 260) },
+              { name: "Position", type: "UDim2", value: "0.5,0,0.5,0" },
+              { name: "AnchorPoint", type: "Vector2", value: "0.5,0.5" },
+              { name: "BackgroundColor3", type: "Color3", value: "0.14,0.14,0.16" },
+              { name: "BorderSizePixel", type: "number", value: "0" },
+              { name: "ZIndex", type: "number", value: "1" },
+            ],
+            children: [
+              { name: "UICorner", className: "UICorner", properties: [{ name: "CornerRadius", type: "UDim", value: "0,16" }] },
+              { name: "UIStroke", className: "UIStroke", properties: [{ name: "Color", type: "Color3", value: "1,1,1" }, { name: "Thickness", type: "number", value: "0" }, { name: "Transparency", type: "number", value: "0.8" }] },
+              { name: "Title", className: "TextLabel", properties: [
+                { name: "Size", type: "UDim2", value: "1,-48,0,36" },
+                { name: "Position", type: "UDim2", value: "0,12,0,12" },
+                { name: "BackgroundTransparency", type: "number", value: "1" },
+                { name: "Text", type: "string", value: params.title ?? "Modal" },
+                { name: "TextColor3", type: "Color3", value: "1,1,1" },
+                { name: "TextScaled", type: "boolean", value: "true" },
+                { name: "TextXAlignment", type: "EnumItem", value: "Enum.TextXAlignment.Left" },
+              ] },
+              { name: "CloseButton", className: "TextButton", properties: [
+                { name: "Size", type: "UDim2", value: "0,34,0,34" },
+                { name: "Position", type: "UDim2", value: "1,-44,0,10" },
+                { name: "AnchorPoint", type: "Vector2", value: "1,0" },
+                { name: "BackgroundColor3", type: "Color3", value: "0.2,0.2,0.22" },
+                { name: "BorderSizePixel", type: "number", value: "0" },
+                { name: "Text", type: "string", value: "X" },
+                { name: "TextColor3", type: "Color3", value: "1,1,1" },
+                { name: "TextScaled", type: "boolean", value: "true" },
+              ], children: [
+                { name: "UICorner", className: "UICorner", properties: [{ name: "CornerRadius", type: "UDim", value: "0,8" }] },
+              ] },
+            ],
+          },
+          {
+            name: "ModalController",
+            className: "LocalScript",
+            properties: [{ name: "Source", type: "string", value: "local controller = script.Parent\nlocal overlay = controller:WaitForChild(\"Overlay\")\nlocal panel = controller:WaitForChild(\"Panel\")\nlocal closeButton = panel:FindFirstChild(\"CloseButton\")\nlocal ts = game:GetService(\"TweenService\")\nlocal openInfo = TweenInfo.new(0.18, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)\nlocal closeInfo = TweenInfo.new(0.14, Enum.EasingStyle.Quad, Enum.EasingDirection.In)\nlocal function setOpen(visible)\n  overlay.Visible = true\n  panel.Visible = true\n  if visible then\n    overlay.BackgroundTransparency = 1\n    ts:Create(overlay, openInfo, {BackgroundTransparency = 0.5}):Play()\n  else\n    ts:Create(overlay, closeInfo, {BackgroundTransparency = 1}):Play()\n    task.delay(0.15, function() overlay.Visible = false; panel.Visible = false end)\n  end\nend\nif closeButton then closeButton.MouseButton1Click:Connect(function() setOpen(false) end) end\nsetOpen(true)\n" }], },
+        ],
+      };
+      const result = await sendStudioCommand(state, state.isStudioConnected.bind(state), HEARTBEAT_STALE_MS, "import_ui", {
+        parentPath: params.parentPath ?? "game.StarterGui",
+        node,
+      });
+      return okText(result);
+    },
+  );
+
 }
 
 
