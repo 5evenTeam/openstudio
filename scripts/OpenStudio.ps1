@@ -122,7 +122,7 @@ if ($env:OPENSTUDIO_SKIP_CHECKS -ne "1") {
     Write-Host "[OpenStudio] OpenCode detected."
   }
 
-  $studio = Get-Process | Where-Object { $_.ProcessName -match "Studio|RobloxStudio" }
+  $studio = Get-Process | Where-Object { $_.MainWindowHandle -ne 0 -and ($_.ProcessName -in @("RobloxStudio", "RobloxStudioBeta") -or $_.MainWindowTitle -match "Roblox Studio") }
   if (-not $studio) {
     Write-Error "[OpenStudio] Roblox Studio does not appear to be running. Start Roblox Studio first."
     exit 1
