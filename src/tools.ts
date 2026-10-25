@@ -1069,7 +1069,7 @@ export function registerTools(server: McpServer, state: BridgeState): void {
   );
 
   server.tool(
-    "openstudio_ui_button",
+    "openstudio_ui_button_glossy",
     "Create a clickable-looking UI button.",
     {
       parentPath: z.string().optional(),
