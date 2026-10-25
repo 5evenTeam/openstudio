@@ -34,7 +34,6 @@ test("openstudio collect diagnostics-style command flow", async () => {
         });
       }
     } catch {
-      // ignore transient poll errors
     }
   }, 50);
 

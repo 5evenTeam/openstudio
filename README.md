@@ -2,8 +2,8 @@
 
 OpenStudio is a local MCP bridge and Roblox Studio plugin that lets OpenCode (and other MCP clients) inspect, edit, build, test, and capture Roblox Studio workflows.
 
-Current release: **v0.2.9**  
-Repository: https://github.com/5evenTeam/openstudio
+Current release: **v0.3.0**  
+Repository: https://github.com/5evenTeam/openstudio/releases/tag/v0.3.0
 
 ## Features
 
@@ -27,7 +27,6 @@ Repository: https://github.com/5evenTeam/openstudio
 - Node.js 20+
 - OpenCode or another MCP client
 - Roblox Studio
-- The OpenStudio Roblox Studio plugin
 
 ## Install and build
 
@@ -63,14 +62,6 @@ $env:OPENSTUDIO_SKIP_CHECKS = "1"
 npm start
 ```
 
-## Studio plugin
-
-1. Open Roblox Studio.
-2. Create a plugin script from `studio/OpenStudioPlugin.luau`.
-3. Enable it.
-4. Run `openstudio_connect` from OpenCode.
-
-The plugin long-polls the bridge and executes commands in Studio.
 
 ## Permission levels
 
@@ -105,7 +96,6 @@ openstudio_set_permission_level(level: "read-only" | "scripts-only" | "full-edit
 - `openstudio_inspect_instance(path)`
 - `openstudio_delete_instance(path, confirm)`
 
-## UI generation (StudioUI)
 
 ### Declarative node shape
 

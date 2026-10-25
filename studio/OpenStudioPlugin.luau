@@ -1,12 +1,3 @@
---[[
-OpenStudio Roblox Studio Plugin
-
-1. Save this file as a Studio plugin script (init.server.lua? plugin script).
-2. Ensure the OpenStudio bridge is running (OpenStudio.bat).
-3. Set TOKEN below to match OPENSTUDIO_TOKEN if you changed it.
-4. The plugin auto-connects to http://127.0.0.1:3777 and polls for commands.
-]]
-
 local HttpService = game:GetService("HttpService")
 
 local BRIDGE_URL = "http://127.0.0.1:3777"
@@ -771,4 +762,5 @@ if Plugin then
 else
     task.spawn(pollLoop)
 end
+
 

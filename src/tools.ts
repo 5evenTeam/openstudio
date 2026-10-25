@@ -925,7 +925,7 @@ export function registerTools(server: McpServer, state: BridgeState): void {
           '$bmp.Save($Destination, [System.Drawing.Imaging.ImageFormat]::Png)',
           '$g.Dispose()',
           '$bmp.Dispose()',
-        ].join("\\r\\n");
+        ].join("\n");
         fs.writeFileSync(scriptPath, script, "utf8");
         const { execFileSync } = await import("node:child_process");
         execFileSync(
@@ -1800,7 +1800,7 @@ export function registerTools(server: McpServer, state: BridgeState): void {
     },
   );
 
-// Keep the previous version tool in sync with config.
-  // (No-op here; openstudio_version already returns bridge metadata.)
 }
+
+
 

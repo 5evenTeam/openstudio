@@ -31,7 +31,6 @@ async function runRoundTrip(type, payload, responseData) {
         });
       }
     } catch {
-      // ignore transient poll errors
     }
   }, 50);
 

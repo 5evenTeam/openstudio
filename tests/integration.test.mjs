@@ -36,7 +36,6 @@ test("mock Studio client completes a write_script command", async () => {
         });
       }
     } catch {
-      // ignore transient poll errors
     }
   }, 50);
 
