@@ -1,6 +1,6 @@
 {
   "name": "openstudio",
-  "version": "0.3.3",
+  "version": "0.3.4",
   "description": "MCP bridge between OpenCode and Roblox Studio",
   "license": "MIT",
   "type": "module",

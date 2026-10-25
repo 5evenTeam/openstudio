@@ -38,7 +38,7 @@ local function heartbeat()
     local logsToSend = pendingLogs
     pendingLogs = {}
     return request("POST", "/heartbeat", {
-        version = "0.2.0",
+        version = "0.3.4",
         capabilities = {
             "list_scripts",
             "read_script",
@@ -750,7 +750,8 @@ end
 
 if Plugin then
     local toolbar = Plugin:CreateToolbar("OpenStudio")
-    local button = toolbar:CreateButton("Connect", "Toggle OpenStudio connection", "")`r`n    toolbarButton = button
+        local button = toolbar:CreateButton("Connect", "Toggle OpenStudio connection", "")
+        toolbarButton = button
     button.Click:Connect(function()
         if running then
             running = false
@@ -765,5 +766,6 @@ if Plugin then
 else
     task.spawn(pollLoop)
 end
+
 
 
