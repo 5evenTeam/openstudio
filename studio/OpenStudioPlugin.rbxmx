@@ -32,6 +32,9 @@ local function request(method, path, body)
     if not ok then
         return false, tostring(result)
     end
+    if type(result) == "table" and result.Success == false then
+        return false, tostring(result.StatusMessage or result.HttpError or "request failed")
+    end
     local decoded = nil
     if result.Body and #result.Body > 0 then
         local decodeOk, decodedValue = pcall(function()
@@ -40,6 +43,9 @@ local function request(method, path, body)
         if decodeOk then
             decoded = decodedValue
         end
+    end
+    if type(decoded) == "table" and decoded.ok == false then
+        return false, tostring(decoded.error or "request failed")
     end
     return true, decoded or result
 end
