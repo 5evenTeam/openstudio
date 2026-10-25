@@ -31,7 +31,9 @@
     "clean": "rimraf dist",
     "lint": "tsc --noEmit",
     "test": "npm run build && node --test --test-concurrency=1 tests/*.mjs",
-    "update": "npm install && npm run build"
+    "update": "npm install && npm run build",
+    "install-plugin": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/install-plugin.ps1",
+    "setup": "npm run build && powershell -NoProfile -ExecutionPolicy Bypass -File scripts/install-plugin.ps1"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.32.2",
