@@ -214,3 +214,9 @@ npm run dev
 - Bridge listens on `127.0.0.1:3777` by default.
 - Studio plugin networking requires HttpService access to localhost.
 PY
+
+
+## Wiki and documentation
+
+- GitHub wiki: https://github.com/5evenTeam/openstudio/wiki
+- Repository docs: `docs/`
