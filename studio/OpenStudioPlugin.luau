@@ -721,7 +721,10 @@ local running = true
 
 local function pollLoop()
     while running do
-        local heartbeatOk = heartbeat()
+        local heartbeatOk, heartbeatError = heartbeat()
+        if not heartbeatOk then
+            warn("[OpenStudio] Could not reach the OpenStudio bridge: " .. tostring(heartbeatError))
+        end
         if toolbarButton then
             toolbarButton.Text = heartbeatOk and "OpenStudio Connected" or "OpenStudio Disconnected"
         end
