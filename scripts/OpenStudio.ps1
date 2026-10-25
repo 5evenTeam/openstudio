@@ -65,6 +65,42 @@ if ($env:OPENSTUDIO_SKIP_CHECKS -ne "1") {
     exit 1
   }
 
+  # Clear a stale OpenStudio bridge if one is listening on the default port.
+  $listeners = Get-NetTCPConnection -LocalPort 3777 -State Listen -ErrorAction SilentlyContinue
+  foreach ($listener in $listeners) {
+    $proc = Get-Process -Id $listener.OwningProcess -ErrorAction SilentlyContinue
+    if ($proc) {
+      if ($proc.ProcessName -match "node") {
+        Write-Host "[OpenStudio] Stopping stale Node bridge process $($proc.Id)..."
+        Stop-Process -Id $proc.Id -Force -ErrorAction SilentlyContinue
+      } else {
+        Write-Error "[OpenStudio] Port 3777 is in use by $($proc.ProcessName) (PID $($proc.Id)). Stop it and retry."
+        exit 1
+      }
+    }
+  }
+  Start-Sleep -Seconds 1
+
+  $healthToken = $env:OPENSTUDIO_TOKEN
+  if ([string]::IsNullOrWhiteSpace($healthToken)) { $healthToken = 'openstudio-local-dev-token' }
+
+  $healthOk = $false
+  try {
+    $response = Invoke-WebRequest -Uri 'http://127.0.0.1:3777/health' -Headers @{ 'X-OpenStudio-Token' = $healthToken } -TimeoutSec 2 -UseBasicParsing
+    if ($response.Content -like '*"bridge"*running*') { $healthOk = $true }
+  } catch {
+    $healthOk = $false
+  }
+
+  if ($healthOk) {
+    Write-Host '[OpenStudio] Detected an existing OpenStudio bridge; stopping it for a clean restart...'
+    $listeners = Get-NetTCPConnection -LocalPort 3777 -State Listen -ErrorAction SilentlyContinue
+    foreach ($listener in $listeners) {
+      try { Stop-Process -Id $listener.OwningProcess -Force -ErrorAction Stop } catch {}
+    }
+    Start-Sleep -Seconds 2
+  }
+
   $portInUse = $false
   try {
     $client = New-Object System.Net.Sockets.TcpClient("127.0.0.1", 3777)
@@ -98,5 +134,6 @@ if ($env:OPENSTUDIO_SKIP_CHECKS -ne "1") {
 Write-Host "[OpenStudio] Starting bridge..."
 & node $dist @args
 exit $LASTEXITCODE
+
 
 
