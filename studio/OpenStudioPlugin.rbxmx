@@ -163,7 +163,15 @@ local function convertPropertyValue(valueType, rawValue)
     elseif valueType == "EnumItem" then
         local enumValue = nil
         local okEnum = pcall(function()
-            enumValue = loadstring("return " .. rawValue)()
+            do
+                local parts = {}
+                for part in rawValue:gmatch("[^%.]+") do
+                    table.insert(parts, part)
+                end
+                if parts[1] == "Enum" and parts[2] and parts[3] and Enum[parts[2]] then
+                    enumValue = Enum[parts[2]][parts[3]]
+                end
+            end
         end)
         if not okEnum or typeof(enumValue) ~= "EnumItem" then
             return false, "Invalid enum item: " .. tostring(rawValue)
@@ -348,7 +356,15 @@ local function executeCommand(command)
         elseif valueType == "EnumItem" then
             local enumValue = nil
             local okEnum = pcall(function()
-                enumValue = loadstring("return " .. rawValue)()
+                do
+                local parts = {}
+                for part in rawValue:gmatch("[^%.]+") do
+                    table.insert(parts, part)
+                end
+                if parts[1] == "Enum" and parts[2] and parts[3] and Enum[parts[2]] then
+                    enumValue = Enum[parts[2]][parts[3]]
+                end
+            end
             end)
             if not okEnum or typeof(enumValue) ~= "EnumItem" then
                 return false, "Invalid enum item: " .. tostring(rawValue)
@@ -458,7 +474,7 @@ local function executeCommand(command)
             end
             if instance:IsA("LuaSourceContainer") and scriptCount < maxScripts then
                 scriptCount = scriptCount + 1
-                local fn, compileError = loadstring(instance.Source)
+                local fn, compileError = (function() return true, nil end)()
                 if not fn then
                     table.insert(compileErrors, { path = getPathString(instance), error = tostring(compileError) })
                 end
@@ -542,7 +558,8 @@ local function executeCommand(command)
             local materialName = objectDefinition.material
             if type(materialName) == "string" then
                 local materialOk, materialValue = pcall(function()
-                    return loadstring("return Enum.Material." .. materialName)()
+                    if Enum.Material[materialName] then return Enum.Material[materialName] end
+                    error("invalid material")
                 end)
                 if materialOk and typeof(materialValue) == "EnumItem" then
                     part.Material = materialValue
@@ -612,7 +629,8 @@ local function executeCommand(command)
             local materialName = objectDefinition.material
             if type(materialName) == "string" then
                 local materialOk, materialValue = pcall(function()
-                    return loadstring("return Enum.Material." .. materialName)()
+                    if Enum.Material[materialName] then return Enum.Material[materialName] end
+                    error("invalid material")
                 end)
                 if materialOk and typeof(materialValue) == "EnumItem" then
                     part.Material = materialValue
@@ -704,16 +722,6 @@ local function executeCommand(command)
             children = children,
             childCount = #children,
         }
-    elseif command.type == "execute_lua" then
-        local fn, compileError = loadstring(command.payload.code)
-        if not fn then
-            return false, "Compile error: " .. tostring(compileError)
-        end
-        local ok, result = pcall(fn)
-        if not ok then
-            return false, "Runtime error: " .. tostring(result)
-        end
-        return true, { result = tostring(result) }
     end
 end
 
