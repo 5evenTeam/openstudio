@@ -1,3 +1,4 @@
+print("[OpenStudio] Plugin loaded and waiting for the bridge...")
 local HttpService = game:GetService("HttpService")
 
 local BRIDGE_URL = "http://127.0.0.1:3777"
